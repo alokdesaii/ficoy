@@ -1,0 +1,43 @@
+.sub { margin: 4px 0 0; color: var(--text-2); font-size: 13px; }
+.filters { display: grid; grid-template-columns: 220px; margin-bottom: 24px; }
+
+.nowrap { white-space: nowrap; }
+.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.dash { color: var(--muted); }
+.empty { padding: 48px 16px; text-align: center; color: var(--text-2); }
+.btn-sm-row { height: 32px; padding: 0 12px; font-size: 12px; }
+
+.pill {
+  display: inline-flex; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 500; white-space: nowrap;
+  &[data-s='Pending'] { background: var(--warn-bg); color: var(--warn); }
+  &[data-s='Approved'] { background: var(--ok-bg); color: var(--ok); }
+  &[data-s='Rejected'] { background: var(--bad-bg); color: var(--bad); }
+}
+
+.pager {
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 16px; color: var(--text-2); font-size: 13px;
+  .size { display: flex; align-items: center; gap: 8px; margin-right: auto; .form-select { width: 76px; height: 32px; padding-top: 0; padding-bottom: 0; font-size: 13px; } }
+  nav { display: flex; align-items: center; gap: 8px; }
+  .pg { min-width: 88px; text-align: center; font-variant-numeric: tabular-nums; }
+  button { width: 32px; height: 32px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink);
+    &:hover:not(:disabled) { border-color: var(--brand); } &:disabled { opacity: 0.4; } i { font-size: 11px; } }
+}
+
+// review modal
+.dialog-md { max-width: 560px; }
+.dialog-head { gap: 12px; h4 { margin-right: auto; } }
+.facts { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 0 0 16px;
+  dt { margin-bottom: 4px; color: var(--text-2); font-size: 12px; font-weight: 500; } dd { margin: 0; font-size: 14px; font-weight: 600; color: var(--heading); } }
+.compare {
+  display: grid; grid-template-columns: 96px 1fr 1fr; margin-bottom: 16px; border: 1px solid var(--divider); border-radius: 8px; overflow: hidden; font-size: 13px;
+  > div { padding: 10px 12px; border-top: 1px solid var(--divider); font-variant-numeric: tabular-nums; }
+  .col-h { border-top: 0; background: var(--bg); color: var(--text-2); font-size: 12px; font-weight: 600; }
+  .lbl { color: var(--text-2); }
+  .req { background: color-mix(in srgb, var(--accent) 8%, var(--surface)); color: var(--heading); font-weight: 600; }
+}
+.field + .field { margin-top: 16px; }
+.note { margin: 0; padding: 12px; border-radius: 8px; background: var(--bg); font-size: 13px; line-height: 1.5; white-space: pre-wrap; }
+.file { display: flex; align-items: center; gap: 8px; margin: 8px 0 0; color: var(--brand-text); font-size: 13px; }
+.opt { color: var(--muted); font-weight: 400; }
+textarea.form-control { height: auto; resize: vertical; }
+.btn-reject { background: var(--surface); border: 1px solid var(--bad-line); color: var(--bad); &:hover { background: var(--bad-bg); color: var(--bad); } }

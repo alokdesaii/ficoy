@@ -1,0 +1,21 @@
+.filters { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+.search { position: relative; width: 320px; max-width: 100%;
+  i { position: absolute; top: 50%; left: 12px; transform: translateY(-50%); color: var(--muted); font-size: 14px; } .form-control { padding-left: 36px; } }
+.count { color: var(--text-2); font-size: 13px; }
+
+th, td { padding-left: 10px !important; padding-right: 10px !important; }
+th { white-space: normal !important; vertical-align: bottom; }
+.wrap { min-width: 120px; .id { display: block; color: var(--text-2); font-size: 12px; font-weight: 400; } }
+.nowrap { white-space: nowrap; }
+.dash { color: var(--muted); }
+.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.empty { padding: 48px 16px; text-align: center; color: var(--text-2); a { color: var(--brand-text); font-weight: 500; } }
+
+.pager {
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 16px; color: var(--text-2); font-size: 13px;
+  .size { display: flex; align-items: center; gap: 8px; margin-right: auto; .form-select { width: 76px; height: 32px; padding-top: 0; padding-bottom: 0; font-size: 13px; } }
+  nav { display: flex; align-items: center; gap: 8px; }
+  .pg { min-width: 88px; text-align: center; font-variant-numeric: tabular-nums; }
+  button { width: 32px; height: 32px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink);
+    &:hover:not(:disabled) { border-color: var(--brand); } &:disabled { opacity: 0.4; } i { font-size: 11px; } }
+}

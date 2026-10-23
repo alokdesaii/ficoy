@@ -1,0 +1,37 @@
+.sub { margin: 4px 0 0; color: var(--text-2); font-size: 13px; }
+.stage-cards { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+.sc { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 16px; border: 1px solid transparent; border-radius: 12px; text-align: left;
+  span { font-size: 12px; font-weight: 600; } b { color: var(--heading); font-size: 26px; font-variant-numeric: tabular-nums; line-height: 1.1; }
+  &[data-s='Awaiting Objectives'] { background: var(--khaki-bg); span { color: var(--khaki-ink); } }
+  &[data-s='Active'] { background: var(--purple-bg); span { color: var(--purple-ink); } }
+  &[data-s='Check-in Due'] { background: var(--warn-bg); span { color: var(--warn); } }
+  &[data-s='Outcome Due'] { background: var(--bad-bg); span { color: var(--bad); } }
+  &[data-s='Confirmed'] { background: var(--ok-bg); span { color: var(--ok); } }
+  &[data-s='Terminated'] { background: var(--divider); span { color: var(--text-2); } }
+  &:hover { box-shadow: 0 4px 12px var(--shadow-md); } &.on { box-shadow: 0 0 0 2px var(--brand); } }
+
+.filters { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.search { position: relative; width: 280px; i { position: absolute; top: 50%; left: 12px; transform: translateY(-50%); color: var(--muted); font-size: 14px; } .form-control { padding-left: 36px; } }
+.count { margin-left: auto; color: var(--text-2); font-size: 13px; }
+
+th, td { padding-left: 12px !important; padding-right: 12px !important; }
+.who { display: flex; align-items: center; gap: 12px; min-width: 190px;
+  .av { display: grid; place-items: center; flex: none; width: 34px; height: 34px; border-radius: 50%; background: var(--purple-bg); color: var(--purple-ink); font-size: 12px; font-weight: 600; }
+  div { display: flex; flex-direction: column; } b { color: var(--heading); font-size: 13px; } span { color: var(--text-2); font-size: 12px; } }
+.nowrap { white-space: nowrap; } .num { font-variant-numeric: tabular-nums; white-space: nowrap; } .muted { color: var(--text-2); } .small { font-size: 12px; }
+.prog-col { width: 170px; }
+.bar { height: 6px; border-radius: 999px; background: var(--bg); overflow: hidden; span { display: block; height: 100%; background: #8a5cbc; }
+  &[data-s='Check-in Due'] span { background: var(--warn-fill); } &[data-s='Outcome Due'] span { background: var(--danger); } }
+.left { display: block; margin-top: 4px; color: var(--text-2); font-size: 12px; &.bad { color: var(--bad); font-weight: 600; } }
+.obj { font-size: 13px; color: var(--text-2); b { color: var(--heading); } }
+.risk { display: block; margin-top: 2px; color: var(--warn); font-size: 12px; i { margin-right: 4px; font-size: 10px; } }
+.dots { display: flex; gap: 4px; i { width: 10px; height: 10px; border-radius: 50%; background: var(--bg); border: 1px solid var(--line); &.done { background: var(--ok); border-color: var(--ok); } &.late { background: var(--warn-fill); border-color: var(--warn-fill); } } }
+.next { display: block; margin-top: 4px; color: var(--text-2); font-size: 12px; &.bad { color: var(--bad); font-weight: 600; } }
+.pill { display: inline-flex; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 500; white-space: nowrap;
+  &[data-s='Awaiting Objectives'] { background: var(--khaki-bg); color: var(--khaki-ink); } &[data-s='Active'] { background: var(--purple-bg); color: var(--purple-ink); }
+  &[data-s='Check-in Due'] { background: var(--warn-bg); color: var(--warn); } &[data-s='Outcome Due'] { background: var(--bad-bg); color: var(--bad); }
+  &[data-s='Confirmed'] { background: var(--ok-bg); color: var(--ok); } &[data-s='Terminated'] { background: var(--bg); color: var(--text-2); } }
+.btn-table:disabled { opacity: 0.4; cursor: not-allowed; }
+.empty { padding: 48px 16px !important; text-align: center; color: var(--text-2); i { display: block; margin-bottom: 8px; color: var(--purple-ink); font-size: 28px; } b { display: block; color: var(--heading); } a { color: var(--brand-text); } }
+
+@media (max-width: 1199px) { .stage-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); } }

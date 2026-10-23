@@ -1,0 +1,158 @@
+@if (e() && p() && t(); as t) {
+  <div class="page-head">
+    <div>
+      <a class="crumb" [routerLink]="['/probation/view', code]"><i class="fa-solid fa-arrow-left"></i>{{ e()!.name }}'s probation</a>
+      <h2 class="page-main-heading">Probation Decision</h2>
+      <p class="sub">{{ e()!.name }} · {{ e()!.designation }} · probation ends {{ t.end | date: 'd MMM y' }}@if (t.daysLeft < 0) { <b class="bad"> ({{ -t.daysLeft }} days overdue)</b> }</p>
+    </div>
+  </div>
+
+  @if (closed()) {
+    <div class="panel state ok"><i class="fa-solid fa-circle-check"></i><div><b>Already decided</b><span>{{ p()!.outcome ? p()!.outcome + ' on ' + (p()!.decidedOn | date: 'd MMM y') : 'Extended to ' + (p()!.extendedTo | date: 'd MMM y') + ' with a PIP. The PIP outcome is decided in the PIP workflow.' }}</span></div></div>
+  } @else if (blocked()) {
+    <div class="panel state warn"><i class="fa-solid fa-lock"></i><div><b>Waiting for the {{ missing().join(' and ') }}</b><span>Probation Settings require both reviews before HR decides. <a [routerLink]="['/probation/view', code]">Send a reminder</a> from the probation page.</span></div></div>
+  }
+
+  @if (!closed()) {
+    <div class="layout" [class.dim]="blocked()">
+      <div class="main">
+        <section class="panel">
+          <h3 class="sub-heading">Ratings Compared</h3>
+          <table class="table cmp">
+            <thead><tr><th>Criterion</th><th class="text-center">Self</th><th class="text-center">RM</th><th>RM comment</th></tr></thead>
+            <tbody>
+              @for (c of s().criteria; track c) {
+                <tr>
+                  <td class="fw-medium">{{ c }}</td>
+                  <td class="text-center"><span class="r" [attr.data-v]="self()?.ratings?.[c]">{{ self()?.submittedOn ? self()!.ratings[c] : '—' }}</span></td>
+                  <td class="text-center"><span class="r" [attr.data-v]="rm()?.ratings?.[c]">{{ rm()?.submittedOn ? rm()!.ratings[c] : '—' }}</span></td>
+                  <td class="muted">{{ rm()?.notes?.[c] || '' }}</td>
+                </tr>
+              }
+            </tbody>
+            <tfoot><tr><td>Average</td><td class="text-center"><b>{{ selfAvg() ? selfAvg().toFixed(1) : '—' }}</b></td><td class="text-center"><b>{{ rmAvg() ? rmAvg().toFixed(1) : '—' }}</b></td><td></td></tr></tfoot>
+          </table>
+        </section>
+
+        <section class="panel two">
+          <div>
+            <h3 class="sub-heading">Employee says</h3>
+            @if (self()?.submittedOn) { <dl class="qa">@for (q of selfQ; track q.key) { <div><dt>{{ q.label }}</dt><dd>{{ self()!.answers[q.key] || '—' }}</dd></div> }</dl> }
+            @else { <p class="muted">Self review not submitted.</p> }
+          </div>
+          <div>
+            <h3 class="sub-heading">RM says</h3>
+            @if (rm()?.submittedOn) {
+              <dl class="qa">
+                @for (q of rmQ; track q.key) { <div><dt>{{ q.label }}</dt><dd>{{ rm()!.answers[q.key] || '—' }}</dd></div> }
+                @if (rm()!.pipFocus) { <div><dt>Suggested PIP focus</dt><dd>{{ rm()!.pipFocus }}</dd></div> }
+                @if (rm()!.reason) { <div><dt>Reason for termination</dt><dd>{{ rm()!.reason }}</dd></div> }
+              </dl>
+            } @else { <p class="muted">RM review not submitted.</p> }
+          </div>
+        </section>
+
+        <section class="panel">
+          <h3 class="sub-heading">Decision</h3>
+          <div class="recs">
+            <span>RM recommends <b class="tag" [attr.data-o]="rmRec()">{{ rmRec() || 'Not yet' }}</b>@if (rm()?.extendMonths && rmRec() === 'Extend') { by {{ rm()!.extendMonths }} month(s) }</span>
+            <span>Policy suggests <b class="tag" [attr.data-o]="suggested()">{{ suggested() || '—' }}</b></span>
+          </div>
+          <div class="outcomes" role="radiogroup" aria-label="Outcome">
+            @for (o of outcomes; track o) {
+              <button type="button" role="radio" class="oc" [attr.data-o]="o" [class.on]="outcome() === o" [attr.aria-checked]="outcome() === o"
+                      [disabled]="blocked() || (o === 'Extend' && !canExtend()) || overrideLocked(o)" (click)="pick(o)">
+                <i class="fa-solid" [class.fa-circle-check]="o === 'Confirm'" [class.fa-route]="o === 'Extend'" [class.fa-circle-xmark]="o === 'Terminate'"></i>
+                <b>{{ o === 'Extend' ? 'Extend with PIP' : o }}</b>
+                <span>{{ o === 'Confirm' ? 'Employment becomes permanent' : o === 'Extend' ? (canExtend() ? 'Up to ' + s().maxExtensionMonths + ' more months' : 'Extension limit reached') : 'Employment ends' }}</span>
+                @if (o === rmRec()) { <em>RM</em> }
+              </button>
+            }
+          </div>
+
+          @if (outcome(); as o) {
+            <div class="fields">
+              @if (o === 'Confirm') {
+                <div class="field"><label class="form-label" for="ef">Confirmed from<span class="req">*</span></label>
+                  <input id="ef" class="form-control" type="date" [ngModel]="effective()" (ngModelChange)="effective.set($event)" />
+                  <span class="hint">Day after probation ends by default</span></div>
+              }
+              @if (o === 'Extend') {
+                <div class="field"><label class="form-label" for="xm">Extend by<span class="req">*</span></label>
+                  <select id="xm" class="form-select" [ngModel]="months()" (ngModelChange)="months.set(+$event)">
+                    @for (m of monthsList(); track m) { <option [ngValue]="m">{{ m }} month{{ m > 1 ? 's' : '' }}</option> }
+                  </select></div>
+                <div class="field"><label class="form-label">New end date</label><div class="ro">{{ newEnd() | date: 'EEE, d MMM y' }}</div>
+                  <span class="hint">A {{ s().pipDurationDays }}-day PIP starts with check-ins every {{ s().pipCheckpointEveryDays }} days</span></div>
+              }
+              @if (o === 'Terminate') {
+                <div class="field"><label class="form-label" for="te">Effective date<span class="req">*</span></label>
+                  <input id="te" class="form-control" type="date" [ngModel]="effective()" (ngModelChange)="effective.set($event)" /></div>
+                <div class="field"><label class="form-label" for="lw">Last working day</label>
+                  <input id="lw" class="form-control" type="date" [max]="effective()" [ngModel]="lastDay()" (ngModelChange)="lastDay.set($event)" /></div>
+                <div class="field span"><label class="form-label" for="tr">Reason<span class="req">*</span></label>
+                  <textarea id="tr" class="form-control" rows="3" [(ngModel)]="reason" (ngModelChange)="touch()" [class.is-invalid]="tried() && !reason.trim()" placeholder="Shown on the termination letter"></textarea></div>
+              }
+              @if (overriding()) {
+                <div class="field span"><label class="form-label" for="ov">Why are you overriding the RM's recommendation?<span class="req">*</span></label>
+                  <textarea id="ov" class="form-control" rows="2" [(ngModel)]="override" (ngModelChange)="touch()" [class.is-invalid]="tried() && !override.trim()"></textarea></div>
+              }
+              <div class="field span"><label class="form-label" for="nt">Internal note <span class="opt">(optional, HR only)</span></label>
+                <textarea id="nt" class="form-control" rows="2" [(ngModel)]="note"></textarea></div>
+            </div>
+          }
+        </section>
+      </div>
+
+      <aside class="side">
+        <div class="panel">
+          <h3 class="sub-heading">Timeline</h3>
+          <dl class="facts">
+            <div><dt>Started</dt><dd>{{ t.start | date: 'd MMM y' }}</dd></div>
+            <div><dt>Original end</dt><dd>{{ t.baseEnd | date: 'd MMM y' }}</dd></div>
+            @if (t.adj.days) { <div><dt>Leave adjustment</dt><dd>+{{ t.adj.days }} days</dd></div> }
+            <div><dt>Current end</dt><dd>{{ t.end | date: 'd MMM y' }}</dd></div>
+            <div><dt>Reviews</dt><dd>{{ 2 - missing().length }} of 2 in</dd></div>
+          </dl>
+        </div>
+        @if (outcome()) {
+          <div class="panel">
+            <h3 class="sub-heading">Who will be notified</h3>
+            <ul class="to">@for (r of recipients(); track r) { <li><span>{{ r }}</span><b>{{ who(r) }}</b></li> }</ul>
+            <p class="muted small">Letters arrive in Phase 5; until then only notifications go out.</p>
+          </div>
+        }
+      </aside>
+    </div>
+
+    @if (!blocked()) {
+      <div class="bar">
+        @if (tried() && errs().length) { <ul class="errs">@for (x of errs(); track x) { <li><i class="fa-solid fa-circle-exclamation"></i>{{ x }}</li> }</ul> }
+        @else { <span class="muted">{{ outcome() ? 'Ready to record: ' + outcome() : 'Choose an outcome to continue' }}</span> }
+        <button class="btn btn-primary" (click)="submit()"><i class="fa-solid fa-gavel"></i>Record Decision</button>
+      </div>
+    }
+  }
+
+  @if (confirming()) {
+    <div class="backdrop" (click)="confirming.set(false)">
+      <div class="dialog" role="alertdialog" aria-modal="true" (click)="$event.stopPropagation()">
+        <div class="dialog-head"><h4>Record decision?</h4><button class="btn-close-popup" (click)="confirming.set(false)" aria-label="Close"><i class="fa-solid fa-xmark"></i></button></div>
+        <div class="dialog-body">
+          <p class="big" [attr.data-o]="outcome()">
+            @switch (outcome()) {
+              @case ('Confirm') { Confirm {{ e()!.name }} from {{ effective() | date: 'd MMM y' }} }
+              @case ('Extend') { Extend {{ e()!.name }}'s probation to {{ newEnd() | date: 'd MMM y' }} with a PIP }
+              @case ('Terminate') { Terminate {{ e()!.name }} effective {{ effective() | date: 'd MMM y' }} }
+            }
+          </p>
+          <p class="muted">{{ recipients().length }} recipients will be notified. This is recorded in the audit trail.</p>
+        </div>
+        <div class="dialog-foot"><button class="btn btn-cancel" (click)="confirming.set(false)">Cancel</button>
+          <button class="btn" [class.btn-danger]="outcome() === 'Terminate'" [class.btn-primary]="outcome() !== 'Terminate'" (click)="confirm()">Record Decision</button></div>
+      </div>
+    </div>
+  }
+} @else {
+  <div class="panel state">No probation record found. <a routerLink="/probation/list">Back to the list</a></div>
+}

@@ -1,0 +1,13 @@
+.sub { margin: 4px 0 0; color: var(--text-2); font-size: 13px; }
+.head-actions { display: flex; align-items: center; gap: 8px; .month { width: 180px; } }
+.progress { height: 6px; margin-bottom: 16px; border-radius: 999px; background: var(--bg); overflow: hidden;
+  span { display: block; height: 100%; background: var(--accent); transition: width 0.3s; } }
+
+.nowrap { white-space: nowrap; }
+.muted { color: var(--text-2); }
+.dash { color: var(--muted); }
+.num { font-variant-numeric: tabular-nums; }
+.btn-sm-row { height: 32px; padding: 0 12px; font-size: 12px; }
+.hint { margin: 12px 0 0; color: var(--text-2); font-size: 13px; }
+.pill { display: inline-flex; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 500; white-space: nowrap;
+  &.ok { background: var(--ok-bg); color: var(--ok); } &.wait { background: var(--warn-bg); color: var(--warn); } &.off { background: var(--bg); color: var(--text-2); } }

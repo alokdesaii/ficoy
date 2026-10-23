@@ -1,0 +1,56 @@
+<section class="login-bg">
+  <img src="assets/images/logo-white.svg" alt="ficoy" class="logo-top" />
+
+  <div class="login-container">
+    <div class="login-text">
+      <h1>Welcome <br /><span>Back</span></h1>
+      <img src="assets/images/employees-login.png" alt="" class="people-img d-none d-md-block" />
+    </div>
+
+    @if (step === 'otp') {
+    <div class="login-card">
+      <h4>Enter OTP</h4>
+      <form (submit)="$event.preventDefault(); submitOtp()" novalidate>
+        <div class="field">
+          <label for="otp" class="form-label">OTP</label>
+          <input id="otp" [formControl]="otp" type="text" class="form-control otp-input" placeholder="Enter 6-digit OTP"
+                 maxlength="6" inputmode="numeric" autocomplete="one-time-code" />
+        </div>
+        <button type="submit" class="btn btn-primary w-100" [disabled]="otp.invalid">Submit OTP</button>
+        <div class="text-center mt-3">
+          <a href="#" class="forgotpswd" (click)="$event.preventDefault(); step = 'login'">Back to Login</a>
+        </div>
+      </form>
+    </div>
+    } @else {
+    <div class="login-card">
+      <h4>Login</h4>
+      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <div class="field">
+          <label for="username" class="form-label">Username</label>
+          <div class="input-wrap">
+            <input id="username" formControlName="userName" type="text" class="form-control" placeholder="Enter username" autocomplete="username" />
+            <i class="fas fa-user input-icon" aria-hidden="true"></i>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="password" class="form-label">Password</label>
+          <div class="input-wrap">
+            <input id="password" formControlName="password" [type]="showPassword ? 'text' : 'password'" class="form-control" placeholder="Enter password" autocomplete="current-password" />
+            <button type="button" class="input-icon icon-btn" (click)="showPassword = !showPassword"
+                    [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'">
+              <i class="fas" [class.fa-eye]="showPassword" [class.fa-eye-slash]="!showPassword"></i>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100" [disabled]="form.invalid">Submit</button>
+        <div class="text-center mt-3">
+          <a href="#" class="forgotpswd">Forgot Password?</a>
+        </div>
+      </form>
+    </div>
+    }
+  </div>
+</section>

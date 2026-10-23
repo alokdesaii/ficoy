@@ -1,0 +1,82 @@
+<aside id="sidebar" [class.collapsed]="collapsed">
+  <a routerLink="/home" class="brand"><img src="assets/images/logo-white.svg" alt="ficoy" /></a>
+  <ul class="sidebar-menu">
+    @for (item of menu; track item.label) {
+      <li [class.open]="open === item.label">
+        @if (item.children) {
+          <a (click)="open = open === item.label ? null : item.label" [class.active]="isSectionActive(item)" [attr.title]="collapsed ? item.label : null">
+            @if (item.fa) { <i [class]="item.fa + ' menu-icon menu-fa'"></i> } @else { <img [src]="'assets/images/' + item.icon" alt="" class="menu-icon" /> }
+            <span class="menu-title">{{ item.label }}</span>
+            <i class="fa-solid fa-angle-right menu-caret"></i>
+          </a>
+          @if (open === item.label && !collapsed) {
+            <ul class="submenu">
+              @for (c of item.children; track c.link) {
+                <li>@if (c.soon) { <span class="soon" aria-disabled="true" title="Coming soon">{{ c.label }}</span> } @else { <a [routerLink]="c.link" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: c.link === '/probation' }">{{ c.label }}</a> }</li>
+              }
+            </ul>
+          }
+        } @else {
+          <a [routerLink]="item.link" routerLinkActive="active" [attr.title]="collapsed ? item.label : null">
+            @if (item.fa) { <i [class]="item.fa + ' menu-icon menu-fa'"></i> } @else { <img [src]="'assets/images/' + item.icon" alt="" class="menu-icon" /> }
+            <span class="menu-title">{{ item.label }}</span>
+          </a>
+        }
+      </li>
+    }
+  </ul>
+</aside>
+
+<section id="content">
+  <header class="topbar">
+    <button class="btn-menu" (click)="collapsed = !collapsed" aria-label="Toggle sidebar"><i class="fa fa-bars"></i></button>
+    <ol class="breadcrumb d-none d-md-flex">
+      @for (c of crumbs; track c; let last = $last) { <li class="breadcrumb-item" [class.active]="last">{{ c }}</li> }
+    </ol>
+
+    <div class="topbar-right">
+      <span class="today">{{ today | date: 'EEE MMM d y' }}</span>
+      <div class="bell-wrap">
+        <button class="theme-btn bell" (click)="bellOpen = !bellOpen; profileOpen = false" [attr.aria-label]="unread().length + ' unread notifications'" aria-haspopup="true" [attr.aria-expanded]="bellOpen">
+          <i class="fa-regular fa-bell"></i>
+          @if (unread().length) { <span class="badge-n">{{ unread().length > 9 ? '9+' : unread().length }}</span> }
+        </button>
+        @if (bellOpen) {
+          <div class="bell-menu" role="dialog" aria-label="Notifications">
+            <div class="bm-head"><b>Notifications</b>
+              @if (unread().length) { <button (click)="markAll()">Mark all read</button> }</div>
+            <ul>
+              @for (n of feed().slice(0, 6); track n.id) {
+                <li [class.unread]="!isRead(n.id)">
+                  <a [routerLink]="n.link" (click)="openNote(n.id)">
+                    <span class="ic" [attr.data-t]="n.copy.tone"><i [class]="n.copy.icon"></i></span>
+                    <span class="tx"><b>{{ n.copy.title }}</b><span>{{ n.copy.body }}</span><em>{{ n.date | date: 'd MMM' }}</em></span>
+                  </a>
+                </li>
+              } @empty { <li class="none">You're all caught up</li> }
+            </ul>
+            <a class="bm-all" routerLink="/notifications" (click)="bellOpen = false">View all notifications</a>
+          </div>
+        }
+      </div>
+      <button class="theme-btn" (click)="toggleTheme()" [attr.aria-label]="theme() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
+              [title]="theme() === 'dark' ? 'Light mode' : 'Dark mode'">
+        <i class="fa-solid" [class.fa-sun]="theme() === 'dark'" [class.fa-moon]="theme() !== 'dark'"></i>
+      </button>
+      <div class="profile" (click)="profileOpen = !profileOpen">
+        @if (photo()) { <img [src]="photo()" alt="" /> } @else { <span class="hdr-avatar">{{ initials }}</span> }
+        <span>{{ userName }}</span>
+        <i class="fa-solid fa-angle-down"></i>
+        @if (profileOpen) {
+          <ul class="profile-link">
+            <li><a routerLink="/profile"><i class="fa-regular fa-user"></i> Profile</a></li>
+            <li><a routerLink="/changepassword"><i class="fa-solid fa-lock"></i> Change Password</a></li>
+            <li><a (click)="logout()"><i class="fa-solid fa-arrow-right-from-bracket"></i> Logout</a></li>
+          </ul>
+        }
+      </div>
+    </div>
+  </header>
+
+  <main><router-outlet /></main>
+</section>

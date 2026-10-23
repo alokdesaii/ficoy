@@ -1,0 +1,151 @@
+@if (e() && p(); as p) {
+  <div class="page-head">
+    <div>
+      <a class="crumb" routerLink="/probation/pip"><i class="fa-solid fa-arrow-left"></i>PIP List</a>
+      <h2 class="page-main-heading">Performance Improvement Plan</h2>
+    </div>
+    <a class="btn btn-cancel" [routerLink]="['/probation/view', code]"><i class="fa-regular fa-folder-open"></i>Probation record</a>
+  </div>
+
+  <div class="hero">
+    <div class="who">
+      <span class="av">{{ e()!.name.split(' ')[0][0] }}{{ e()!.name.split(' ').at(-1)![0] }}</span>
+      <div><h3>{{ e()!.name }} <span class="pill" [attr.data-s]="stage()">{{ stage() }}</span></h3>
+        <p>{{ e()!.designation }} · RM {{ e()!.manager || '—' }}</p></div>
+    </div>
+    <div class="kpis">
+      <div><span>Period</span><b>{{ p.start | date: 'd MMM' }} – {{ p.end | date: 'd MMM y' }}</b></div>
+      <div><span>Objectives met</span><b>{{ met() }} / {{ p.objectives.length }}</b></div>
+      <div><span>Avg check-in rating</span><b>{{ avgRating() ? avgRating().toFixed(1) : '—' }}</b></div>
+      @if (!closed()) { <div class="prog"><span>{{ daysLeft() > 0 ? daysLeft() + ' days left' : daysLeft() === 0 ? 'Ends today' : -daysLeft() + ' days past end' }}</span><div class="bar"><i [style.width.%]="progress() * 100"></i></div></div> }
+      @else { <div class="closed" [attr.data-o]="p.outcome"><span>Outcome</span><b>{{ p.outcome }} · {{ p.decidedOn | date: 'd MMM y' }}</b></div> }
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="main">
+      <!-- objectives -->
+      <section class="panel">
+        <div class="sec-head">
+          <h3 class="sub-heading m-0">Objectives</h3>
+          @if (approved()) { <span class="ok-tag"><i class="fa-solid fa-circle-check"></i>Approved {{ p.objectivesApprovedOn | date: 'd MMM y' }}</span> }
+          @else { <span class="warn-tag"><i class="fa-regular fa-hourglass-half"></i>Draft · needs HR approval</span> }
+        </div>
+        @if (!approved()) { <p class="hint">The RM sets measurable objectives. HR approves them to start the PIP and its check-ins.</p> }
+        <ol class="objs">
+          @for (o of p.objectives; track $index; let i = $index) {
+            <li>
+              <span class="n">{{ i + 1 }}</span>
+              @if (!approved()) {
+                <div class="edit">
+                  <input class="form-control" [ngModel]="o.title" (ngModelChange)="editObjective(i, { title: $event })" placeholder="Objective" [attr.aria-label]="'Objective ' + (i + 1)" />
+                  <input class="form-control" [ngModel]="o.measure" (ngModelChange)="editObjective(i, { measure: $event })" placeholder="How it will be measured" [attr.aria-label]="'Measure for objective ' + (i + 1)" [class.is-invalid]="!o.measure.trim()" />
+                </div>
+                <button class="icon bad" (click)="removeObjective(i)" [attr.aria-label]="'Remove objective ' + (i + 1)"><i class="fa-solid fa-xmark"></i></button>
+              } @else {
+                <div class="txt"><b>{{ o.title }}</b><span>{{ o.measure }}</span></div>
+                <span class="st" [attr.data-st]="o.status">{{ o.status }}</span>
+              }
+            </li>
+          }
+        </ol>
+        @if (!approved()) {
+          <div class="adder">
+            <input class="form-control" placeholder="New objective" [(ngModel)]="newObj.title" aria-label="New objective" />
+            <input class="form-control" placeholder="Measure" [(ngModel)]="newObj.measure" (keydown.enter)="addObjective()" aria-label="New objective measure" />
+            <button class="btn btn-cancel" (click)="addObjective()" [disabled]="!newObj.title.trim()"><i class="fa-solid fa-plus"></i>Add</button>
+          </div>
+          <div class="approve">
+            <span class="muted">{{ canApprove() ? 'Ready for approval' : 'Every objective needs a measure' }}</span>
+            <button class="btn btn-primary" (click)="approve()" [disabled]="!canApprove()"><i class="fa-solid fa-check"></i>Approve & Start PIP</button>
+          </div>
+        }
+      </section>
+
+      <!-- check-ins -->
+      <section class="panel">
+        <h3 class="sub-heading">Check-ins <span class="muted small">every {{ s().pipCheckpointEveryDays }} days</span></h3>
+        <ol class="cis">
+          @for (c of p.checkIns; track c.due; let i = $index; let last = $last) {
+            <li [class.done]="c.rmOn" [class.late]="!c.rmOn && c.due < today && approved()">
+              <div class="ci-head">
+                <span class="dot"><i class="fa-solid" [class.fa-check]="c.rmOn" [class.fa-flag-checkered]="!c.rmOn && last" [class.fa-calendar-day]="!c.rmOn && !last"></i></span>
+                <div class="t"><b>{{ last ? 'Final check-in' : 'Check-in ' + (i + 1) }}</b><span>{{ c.due | date: 'EEE, d MMM y' }}@if (!c.rmOn && c.due < today && approved()) { · <em>overdue</em> }</span></div>
+                <span class="two"><i class="fa-solid" [class.fa-circle-check]="c.selfOn" [class.fa-circle]="!c.selfOn" [class.on]="c.selfOn"></i>Employee
+                  <i class="fa-solid" [class.fa-circle-check]="c.rmOn" [class.fa-circle]="!c.rmOn" [class.on]="c.rmOn"></i>RM</span>
+                @if (canOpen(i) && open() !== i) { <button class="btn btn-sm-row" [class.btn-primary]="isDue(c)" [class.btn-cancel]="!isDue(c)" (click)="startCheckIn(i)">{{ isDue(c) ? 'Record' : 'Record early' }}</button> }
+              </div>
+              @if (c.rmOn || selfNote(c)) {
+                <div class="ci-body">
+                  @if (selfNote(c)) { <p><span>Employee</span>{{ selfNote(c) }}</p> }
+                  @if (c.rmOn) { <p><span>RM · rated {{ c.rmRating }}/{{ s().scale.length }}</span>{{ c.rmNote }}</p> }
+                </div>
+              }
+              @if (open() === i) {
+                <div class="ci-form">
+                  <div class="col">
+                    <h5>Employee update</h5>
+                    @if (c.selfOn) { <p class="muted small">Submitted {{ c.selfOn | date: 'd MMM' }}</p> }
+                    @else {
+                      <textarea class="form-control" rows="3" placeholder="What progress have you made since the last check-in?" [(ngModel)]="form.self" aria-label="Employee update"></textarea>
+                      <button class="btn btn-cancel btn-sm-row mt-2" (click)="saveSelf(i)" [disabled]="!form.self.trim()">Submit update</button>
+                    }
+                  </div>
+                  <div class="col">
+                    <h5>RM assessment</h5>
+                    <div class="scale" role="radiogroup" aria-label="Check-in rating">
+                      @for (l of s().scale; track $index; let n = $index) { <button type="button" [class.on]="form.rating === n + 1" [title]="l" (click)="form.rating = n + 1">{{ n + 1 }}</button> }
+                    </div>
+                    <textarea class="form-control mt-2" rows="2" placeholder="Comment (required)" [(ngModel)]="form.note" aria-label="RM comment"></textarea>
+                    <div class="statuses">
+                      @for (o of p.objectives; track $index; let j = $index) {
+                        <label><span>{{ o.title }}</span>
+                          <select class="form-select" [(ngModel)]="form.statuses[j]" [attr.aria-label]="'Status of ' + o.title">@for (st of statuses; track st) { <option [value]="st">{{ st }}</option> }</select></label>
+                      }
+                    </div>
+                    <div class="row-btns"><button class="btn btn-cancel btn-sm-row" (click)="open.set(null)">Cancel</button>
+                      <button class="btn btn-primary btn-sm-row" (click)="saveRm(i)" [disabled]="!form.rating || !form.note.trim()">Save check-in</button></div>
+                  </div>
+                </div>
+              }
+            </li>
+          }
+        </ol>
+      </section>
+    </div>
+
+    <aside class="side">
+      <div class="panel">
+        <h3 class="sub-heading">Final Outcome</h3>
+        @if (closed()) {
+          <p class="result" [attr.data-o]="p.outcome"><i class="fa-solid" [class.fa-circle-check]="p.outcome === 'Confirmed'" [class.fa-circle-xmark]="p.outcome === 'Terminated'"></i>{{ p.outcome }} on {{ p.decidedOn | date: 'd MMM y' }}</p>
+        } @else if (!outcomeReady()) {
+          <p class="muted">HR decides once the PIP ends on {{ p.end | date: 'd MMM y' }} or every check-in is recorded.</p>
+        } @else {
+          <div class="choice">
+            <button [class.on]="outcome() === 'Confirmed'" data-o="Confirmed" (click)="outcome.set('Confirmed')"><i class="fa-solid fa-circle-check"></i>Confirm</button>
+            <button [class.on]="outcome() === 'Terminated'" data-o="Terminated" (click)="outcome.set('Terminated')"><i class="fa-solid fa-circle-xmark"></i>Terminate</button>
+          </div>
+          @if (outcome() === 'Terminated') {
+            <textarea class="form-control mt-3" rows="3" placeholder="Reason (required, shown on the letter)" [(ngModel)]="reason" [class.is-invalid]="tried() && !reason.trim()" aria-label="Termination reason"></textarea>
+          }
+          <button class="btn btn-primary w-100 mt-3" (click)="decide()" [disabled]="!outcome()"><i class="fa-solid fa-gavel"></i>Record Outcome</button>
+          <p class="muted small mt-2">{{ met() }} of {{ p.objectives.length }} objectives met · avg rating {{ avgRating() ? avgRating().toFixed(1) : '—' }}</p>
+        }
+      </div>
+    </aside>
+  </div>
+
+  @if (confirming()) {
+    <div class="backdrop" (click)="confirming.set(false)">
+      <div class="dialog" role="alertdialog" aria-modal="true" (click)="$event.stopPropagation()">
+        <div class="dialog-head"><h4>Record PIP outcome?</h4><button class="btn-close-popup" (click)="confirming.set(false)" aria-label="Close"><i class="fa-solid fa-xmark"></i></button></div>
+        <div class="dialog-body"><b>{{ outcome() === 'Confirmed' ? 'Confirm' : 'Terminate' }} {{ e()!.name }}</b> as of today. This closes the PIP and the probation, and notifies {{ s().recipients.pipOutcome.join(', ') }}.</div>
+        <div class="dialog-foot"><button class="btn btn-cancel" (click)="confirming.set(false)">Cancel</button>
+          <button class="btn" [class.btn-danger]="outcome() === 'Terminated'" [class.btn-primary]="outcome() === 'Confirmed'" (click)="confirm()">Record Outcome</button></div>
+      </div>
+    </div>
+  }
+} @else {
+  <div class="panel muted">No PIP for this employee. <a routerLink="/probation/pip">Back to PIP List</a></div>
+}

@@ -1,0 +1,83 @@
+<div class="page-head">
+  <h2 class="page-main-heading">Import Backdated Payroll</h2>
+  <button class="btn btn-cancel" (click)="template()"><i class="fa-solid fa-download"></i>Download Template</button>
+</div>
+
+<div class="layout">
+  <div class="panel">
+    <h3 class="sub-heading">Upload Backdated Payroll File</h3>
+
+    @if (!file()) {
+      <label class="drop" [class.over]="dragging()"
+             (dragover)="$event.preventDefault(); dragging.set(true)" (dragleave)="dragging.set(false)"
+             (drop)="$event.preventDefault(); take($event.dataTransfer?.files?.[0])">
+        <i class="fa-solid fa-cloud-arrow-up"></i>
+        <b>Drag & drop your file here, or <u>browse</u></b>
+        <span>CSV, XLS or XLSX · up to 5MB</span>
+        <input type="file" hidden accept=".csv,.xls,.xlsx" (change)="take($any($event.target).files?.[0]); $any($event.target).value = ''" />
+      </label>
+    } @else {
+      <div class="file">
+        <i class="fa-regular fa-file-excel"></i>
+        <div><b>{{ file()!.name }}</b><span>{{ file()!.size / 1024 | number: '1.0-1' }} KB</span></div>
+        <button class="btn btn-cancel btn-sm-row" (click)="clear()">Remove</button>
+      </div>
+
+      @if (missing().length) {
+        <p class="alert bad"><i class="fa-solid fa-circle-exclamation"></i>Missing column{{ missing().length > 1 ? 's' : '' }}: {{ missing().join(', ') }}. Use the template to get the right headers.</p>
+      } @else if (excel()) {
+        <p class="alert info"><i class="fa-solid fa-circle-info"></i>Excel files are checked by the server when imported. For a row-by-row preview here, upload a CSV.</p>
+      } @else {
+        <div class="summary">
+          <span class="ok"><i class="fa-solid fa-circle-check"></i>{{ valid().length }} row{{ valid().length === 1 ? '' : 's' }} ready</span>
+          @if (invalid().length) {
+            <span class="bad"><i class="fa-solid fa-triangle-exclamation"></i>{{ invalid().length }} with problems (skipped)</span>
+            <label class="toggle"><input type="checkbox" class="form-check-input" [checked]="showErrorsOnly()" (change)="showErrorsOnly.set($any($event.target).checked)" /> Show problems only</label>
+          }
+        </div>
+        <div class="table-responsive preview">
+          <table class="table">
+            <thead><tr><th>Row</th><th>Payroll Period</th><th>Employee</th><th class="text-end">Gross (A)</th><th class="text-end">Days</th><th class="text-end">Worked</th><th class="text-end">Total Salary</th><th></th></tr></thead>
+            <tbody>
+              @for (c of visible(); track c.line) {
+                <tr [class.err]="c.errors.length">
+                  <td class="num muted">{{ c.line }}</td>
+                  <td class="nowrap">{{ c.row.period || '—' }}</td>
+                  <td class="nowrap"><span class="fw-medium">{{ name(c.row.employeeId) ?? '—' }}</span> <span class="muted">· {{ c.row.employeeId || '?' }}</span></td>
+                  <td class="num text-end">{{ c.row.gross | number: '1.2-2' }}</td>
+                  <td class="num text-end">{{ c.row.days }}</td>
+                  <td class="num text-end">{{ c.row.worked }}</td>
+                  <td class="num text-end fw-semibold">{{ c.row.total | number: '1.2-2' }}</td>
+                  <td class="state">
+                    @if (c.errors.length) { <i class="fa-solid fa-circle-xmark badc" aria-label="Has problems"></i> }
+                    @else { <i class="fa-solid fa-circle-check okc" aria-label="Valid"></i> }
+                  </td>
+                </tr>
+                @if (c.errors.length) {
+                  <tr class="err detail"><td></td><td colspan="7"><span class="why"><i class="fa-solid fa-arrow-turn-up fa-rotate-90"></i>{{ c.errors.join(' · ') }}</span></td></tr>
+                }
+              } @empty { <tr><td colspan="8" class="empty">The file has no data rows</td></tr> }
+            </tbody>
+          </table>
+        </div>
+      }
+    }
+
+    <div class="form-actions">
+      <button class="btn btn-primary" (click)="import()" [disabled]="!canImport()">
+        <i class="fa-solid fa-file-import"></i>{{ excel() || !file() ? 'Upload & Import' : 'Import ' + valid().length + ' row' + (valid().length === 1 ? '' : 's') }}
+      </button>
+    </div>
+  </div>
+
+  <aside class="panel guide">
+    <h3 class="sub-heading">File Format Guide</h3>
+    <dl>
+      <dt>Accepted formats</dt><dd>.csv, .xls, .xlsx</dd>
+      <dt>Payroll period</dt><dd><code>MMMM YYYY</code> — e.g. January 2024</dd>
+      <dt>Required columns</dt>
+      <dd><ol>@for (c of columns; track c) { <li>{{ c }}</li> }</ol></dd>
+    </dl>
+    <button class="link" (click)="template()"><i class="fa-solid fa-download"></i>Download sample template</button>
+  </aside>
+</div>

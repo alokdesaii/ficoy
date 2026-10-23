@@ -1,0 +1,88 @@
+<div class="page-head">
+  <div>
+    <h2 class="page-main-heading">Approval Inbox</h2>
+    <p class="sub">{{ inbox().length ? inbox().length + ' request' + (inbox().length === 1 ? '' : 's') + ' from your team need action' : 'You\'re all caught up' }}</p>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="filters">
+    <div class="field"><label class="form-label" for="q">Employee</label>
+      <div class="search"><i class="fa-solid fa-magnifying-glass"></i>
+        <input id="q" class="form-control" type="search" placeholder="Search by employee name" [ngModel]="search()" (ngModelChange)="search.set($event)" /></div></div>
+    <div class="field"><label class="form-label" for="dep">Department</label>
+      <select id="dep" class="form-select" [ngModel]="department()" (ngModelChange)="department.set($event)">
+        <option value="">All departments</option>
+        @for (d of departments(); track d.id) { <option [value]="d.name">{{ d.name }}</option> }
+      </select></div>
+    <div class="field"><label class="form-label" for="ty">Leave Type</label>
+      <select id="ty" class="form-select" [ngModel]="type()" (ngModelChange)="type.set($event)">
+        <option value="">All leave types</option>
+        @for (t of types; track t) { <option>{{ t }}</option> }
+      </select></div>
+    <div class="field"><label class="form-label" for="from">From</label>
+      <input id="from" class="form-control" type="date" [class.date-empty]="!from()" [max]="to() || null" [ngModel]="from()" (ngModelChange)="from.set($event)" /></div>
+    <div class="field"><label class="form-label" for="to">To</label>
+      <input id="to" class="form-control" type="date" [class.date-empty]="!to()" [min]="from() || null" [ngModel]="to()" (ngModelChange)="to.set($event)" /></div>
+    @if (filtering) { <button class="btn btn-cancel" (click)="clear()">Clear</button> }
+  </div>
+
+  <div class="table-responsive">
+    <table stack class="table">
+      <thead><tr><th>Employee</th><th>Department</th><th>Leave Type</th><th>From</th><th>To</th><th class="text-end">Days</th><th>Status</th><th class="text-end">Actions</th></tr></thead>
+      <tbody>
+        @for (l of filtered(); track l.id) {
+          <tr>
+            <td class="fw-medium nowrap">{{ l.employee }}</td>
+            <td class="nowrap muted">{{ dept(l.employee) }}</td>
+            <td class="nowrap">{{ l.type }}@if (l.session !== 'Full Day') { <span class="muted"> · {{ l.session }}</span> }</td>
+            <td class="num">{{ l.from | date: 'dd MMM y' }}</td>
+            <td class="num">{{ l.to | date: 'dd MMM y' }}</td>
+            <td class="num text-end">{{ days(l) }}</td>
+            <td><span class="pill" [attr.data-s]="l.status">{{ l.status }}</span></td>
+            <td class="text-end text-nowrap">
+              <button class="btn-table t-blue" title="View details" [attr.aria-label]="'View request from ' + l.employee" (click)="view(l)"><i class="fa-regular fa-eye"></i></button>
+              <button class="btn-table t-red" title="Reject" [attr.aria-label]="'Reject request from ' + l.employee" (click)="act(l, false)"><i class="fa-solid fa-xmark"></i></button>
+              <button class="btn-table t-ok" title="Approve" [attr.aria-label]="'Approve request from ' + l.employee" (click)="act(l, true)"><i class="fa-solid fa-check"></i></button>
+            </td>
+          </tr>
+        } @empty {
+          <tr><td colspan="8" class="empty">
+            @if (inbox().length) { No requests match your filters }
+            @else { <i class="fa-regular fa-circle-check"></i><b>All caught up</b><span>New leave requests from your team will appear here.</span> }
+          </td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  @if (done()) { <p class="done"><i class="fa-solid fa-check"></i>{{ done() }} request{{ done() === 1 ? '' : 's' }} handled this session</p> }
+</div>
+
+@if (open(); as l) {
+  <div class="backdrop" (click)="open.set(null)">
+    <div class="dialog dialog-md" role="dialog" aria-modal="true" aria-labelledby="aiTitle" (click)="$event.stopPropagation()">
+      <div class="dialog-head">
+        <h4 id="aiTitle">Leave Request</h4>
+        <span class="pill" [attr.data-s]="l.status">{{ l.status }}</span>
+        <button class="btn-close-popup" (click)="open.set(null)" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="dialog-body">
+        <dl class="facts">
+          <div><dt>Employee</dt><dd>{{ l.employee }}</dd></div>
+          <div><dt>Department</dt><dd>{{ dept(l.employee) }}</dd></div>
+          <div><dt>Leave Type</dt><dd>{{ l.type }}</dd></div>
+          <div><dt>Session</dt><dd>{{ l.session }}</dd></div>
+          <div><dt>From</dt><dd>{{ l.from | date: 'EEE, d MMM y' }}</dd></div>
+          <div><dt>To</dt><dd>{{ l.to | date: 'EEE, d MMM y' }} · {{ days(l) }} day{{ days(l) === 1 ? '' : 's' }}</dd></div>
+          <div class="span-2"><dt>Reason</dt><dd class="plain">{{ l.reason || '—' }}</dd></div>
+        </dl>
+        <label class="form-label" for="cm">Comment <span class="opt">(optional)</span></label>
+        <textarea id="cm" class="form-control" rows="3" placeholder="Add a note for {{ l.employee }}" [(ngModel)]="comment"></textarea>
+      </div>
+      <div class="dialog-foot">
+        <button class="btn btn-reject" (click)="act(l, false, comment)"><i class="fa-solid fa-xmark"></i>Reject</button>
+        <button class="btn btn-primary" (click)="act(l, true, comment)"><i class="fa-solid fa-check"></i>Approve</button>
+      </div>
+    </div>
+  </div>
+}

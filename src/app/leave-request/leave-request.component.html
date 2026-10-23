@@ -1,0 +1,126 @@
+<div class="page-head">
+  <div>
+    <h2 class="page-main-heading">Leave Request</h2>
+    @if (pendingCount()) { <p class="sub">{{ pendingCount() }} awaiting action</p> }
+  </div>
+</div>
+
+<div class="panel">
+  <div class="filters">
+    <div class="field"><label class="form-label" for="q">Employee</label>
+      <div class="search"><i class="fa-solid fa-magnifying-glass"></i>
+        <input id="q" class="form-control" type="search" placeholder="Search by employee name" [ngModel]="search()" (ngModelChange)="set(search, $event)" /></div></div>
+    <div class="field"><label class="form-label" for="from">From</label>
+      <input id="from" class="form-control" type="date" [class.date-empty]="!from()" [max]="to() || null" [ngModel]="from()" (ngModelChange)="set(from, $event)" /></div>
+    <div class="field"><label class="form-label" for="to">To</label>
+      <input id="to" class="form-control" type="date" [class.date-empty]="!to()" [min]="from() || null" [ngModel]="to()" (ngModelChange)="set(to, $event)" /></div>
+    <div class="field"><label class="form-label" for="st">Status</label>
+      <select id="st" class="form-select" [ngModel]="status()" (ngModelChange)="set(status, $event)">
+        <option value="">All statuses</option>
+        @for (s of statuses; track s) { <option>{{ s }}</option> }
+      </select></div>
+    @if (filtering) { <button class="btn btn-cancel" (click)="clear()">Clear</button> }
+  </div>
+
+  <div class="table-responsive">
+    <table stack class="table">
+      <thead><tr>
+        <th>Employee Name</th><th>Leave Type</th><th>Session</th><th>From</th><th>To</th><th class="text-end">Days</th><th>Status</th><th class="text-end">Actions</th>
+      </tr></thead>
+      <tbody>
+        @for (l of rows(); track l.id) {
+          <tr>
+            <td class="fw-medium nowrap">{{ l.employee }}</td>
+            <td class="nowrap">{{ l.type }}</td>
+            <td class="nowrap muted">{{ l.session }}</td>
+            <td class="num">{{ l.from | date: 'dd MMM y' }}</td>
+            <td class="num">{{ l.to | date: 'dd MMM y' }}</td>
+            <td class="num text-end">{{ days(l) }}</td>
+            <td><span class="pill" [attr.data-s]="l.status">{{ l.status }}</span></td>
+            <td class="text-end text-nowrap">
+              @if (l.document) {
+                <button class="btn-table t-green" title="Preview document" [attr.aria-label]="'Preview document for ' + l.employee" (click)="doc(l, 'preview')"><i class="fa-regular fa-file-pdf"></i></button>
+                <button class="btn-table t-green" title="Download document" [attr.aria-label]="'Download document for ' + l.employee" (click)="doc(l, 'download')"><i class="fa-solid fa-download"></i></button>
+              }
+              @if (actionable(l)) {
+                <button class="btn btn-primary btn-sm-row" (click)="view(l)">Review</button>
+              } @else {
+                <button class="btn-table t-blue" title="View" [attr.aria-label]="'View leave for ' + l.employee" (click)="view(l)"><i class="fa-regular fa-eye"></i></button>
+              }
+            </td>
+          </tr>
+        } @empty {
+          <tr><td colspan="8" class="empty">No leave requests match your filters</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pager">
+    <label class="size">Show
+      <select class="form-select" [ngModel]="size()" (ngModelChange)="set(size, +$event)">
+        @for (n of [10, 25, 50, 100]; track n) { <option [value]="n">{{ n }}</option> }
+      </select>
+      entries
+    </label>
+    <span>Showing {{ first() }}–{{ last() }} of {{ filtered().length }}</span>
+    <nav aria-label="Pagination">
+      <button (click)="go(page() - 1)" [disabled]="page() === 1" aria-label="Previous page"><i class="fa-solid fa-chevron-left"></i></button>
+      <span class="pg">Page {{ page() }} of {{ pages() }}</span>
+      <button (click)="go(page() + 1)" [disabled]="page() === pages()" aria-label="Next page"><i class="fa-solid fa-chevron-right"></i></button>
+    </nav>
+  </div>
+</div>
+
+@if (open(); as l) {
+  <div class="backdrop" (click)="open.set(null)">
+    <div class="dialog dialog-md" role="dialog" aria-modal="true" aria-labelledby="lrTitle" (click)="$event.stopPropagation()">
+      <div class="dialog-head">
+        <h4 id="lrTitle">Leave Request Details</h4>
+        <span class="pill" [attr.data-s]="l.status">{{ l.status }}</span>
+        <button class="btn-close-popup" (click)="open.set(null)" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="dialog-body">
+        @if (l.status === 'Cancel Requested') {
+          <p class="banner"><i class="fa-solid fa-circle-info"></i>The employee has asked to cancel this approved leave. Approving cancels it; rejecting keeps it approved.</p>
+        }
+        <dl class="facts">
+          <div><dt>Employee Name</dt><dd>{{ l.employee }}</dd></div>
+          <div><dt>Leave Type</dt><dd>{{ l.type }}</dd></div>
+          <div><dt>From</dt><dd>{{ l.from | date: 'EEE, d MMM y' }}</dd></div>
+          <div><dt>To</dt><dd>{{ l.to | date: 'EEE, d MMM y' }}</dd></div>
+          <div><dt>Session</dt><dd>{{ l.session }}</dd></div>
+          <div><dt>Days</dt><dd>{{ days(l) }}</dd></div>
+          <div class="span-2"><dt>Reason</dt><dd class="plain">{{ l.reason || '—' }}</dd></div>
+          @if (l.document) {
+            <div class="span-2"><dt>Document</dt><dd><button class="link" (click)="doc(l, 'preview')"><i class="fa-regular fa-file-lines"></i>{{ l.document }}</button></dd></div>
+          }
+        </dl>
+
+        <div class="field">
+          <label class="form-label" for="ac">Admin Comments <span class="opt">(optional)</span></label>
+          @if (actionable(l)) {
+            <textarea id="ac" class="form-control" rows="3" placeholder="Add a note for the employee" [(ngModel)]="comment"></textarea>
+          } @else {
+            <p class="note">{{ l.adminComment || 'No comments' }}</p>
+          }
+        </div>
+
+        <h5 class="hist-title">Recent Activity</h5>
+        <ul class="hist">
+          @for (h of l.history; track h.at) {
+            <li><span class="pill" [attr.data-s]="h.status">{{ h.status }}</span><span>{{ h.at | date: 'd MMM y, hh:mm a' }}</span><span class="by">by {{ h.by }}</span></li>
+          } @empty { <li class="muted">No previous activity</li> }
+        </ul>
+      </div>
+      <div class="dialog-foot">
+        @if (actionable(l)) {
+          <button class="btn btn-reject" (click)="act(false)"><i class="fa-solid fa-xmark"></i>Reject</button>
+          <button class="btn btn-primary" (click)="act(true)"><i class="fa-solid fa-check"></i>Approve{{ l.status === 'Cancel Requested' ? ' Cancellation' : '' }}</button>
+        } @else {
+          <button class="btn btn-cancel" (click)="open.set(null)">Close</button>
+        }
+      </div>
+    </div>
+  </div>
+}

@@ -1,0 +1,20 @@
+.toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.year {
+  display: flex; align-items: center; gap: 12px;
+  b { min-width: 48px; text-align: center; color: var(--heading); font-size: 16px; font-variant-numeric: tabular-nums; }
+  button { width: 32px; height: 32px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); &:hover { border-color: var(--brand); } i { font-size: 11px; } }
+}
+.count { color: var(--text-2); font-size: 13px; }
+
+.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.nowrap { white-space: nowrap; }
+.muted { color: var(--text-2); }
+.empty { padding: 48px 16px; text-align: center; color: var(--text-2); }
+tr.past td { color: var(--muted); }
+tr.past td.fw-medium { font-weight: 400 !important; }
+tr.next td { background: color-mix(in srgb, var(--accent) 8%, var(--surface)); }
+.up { display: inline-flex; margin-left: 8px; padding: 2px 8px; border-radius: 999px; background: var(--accent); color: var(--on-accent); font-size: 11px; font-weight: 600; vertical-align: middle; }
+
+.form-grid.four { grid-template-columns: 1fr 1fr 2fr 1fr; }
+@media (max-width: 991px) { .form-grid.four { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 575px) { .form-grid.four { grid-template-columns: 1fr; } }

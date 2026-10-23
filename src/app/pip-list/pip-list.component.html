@@ -1,0 +1,62 @@
+<div class="page-head">
+  <div>
+    <h2 class="page-main-heading">Performance Improvement Plans</h2>
+    <p class="sub">PIPs start automatically when HR extends a probation.</p>
+  </div>
+  <button class="btn btn-accent" (click)="export()" [disabled]="!filtered().length"><i class="fa-solid fa-file-excel"></i>Export to Excel</button>
+</div>
+
+<div class="stage-cards" role="group" aria-label="Filter by stage">
+  @for (s of stages; track s) {
+    <button class="sc" [attr.data-s]="s" [class.on]="stage() === s" (click)="pick(s)" [attr.aria-pressed]="stage() === s"><span>{{ s }}</span><b>{{ counts()[s] }}</b></button>
+  }
+</div>
+
+<div class="panel">
+  <div class="filters">
+    <div class="search"><i class="fa-solid fa-magnifying-glass"></i>
+      <input class="form-control" type="search" placeholder="Search by name" aria-label="Search" [ngModel]="search()" (ngModelChange)="search.set($event)" /></div>
+    @if (stage() || search()) { <button class="btn btn-cancel" (click)="stage.set(''); search.set('')">Clear</button> }
+    <span class="count">{{ filtered().length }} of {{ rows().length }}</span>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table">
+      <thead><tr><th>Employee</th><th>Reporting Manager</th><th>Period</th><th class="prog-col">Progress</th><th>Objectives</th><th>Check-ins</th><th>Stage</th><th class="text-end">Action</th></tr></thead>
+      <tbody>
+        @for (r of filtered(); track r.p.employee) {
+          <tr>
+            <td><div class="who"><span class="av">{{ initials(r.e.name) }}</span><div><b>{{ r.e.name }}</b><span>{{ r.e.designation }}</span></div></div></td>
+            <td class="nowrap">{{ r.e.manager || '—' }}</td>
+            <td class="num">{{ r.p.start | date: 'dd MMM' }} – {{ r.p.end | date: 'dd MMM yy' }}</td>
+            <td class="prog-col">
+              @if (r.stage === 'Confirmed' || r.stage === 'Terminated') { <span class="muted small">Closed {{ r.p.decidedOn | date: 'dd MMM yy' }}</span> }
+              @else {
+                <div class="bar" [attr.data-s]="r.stage"><span [style.width.%]="r.progress * 100"></span></div>
+                <span class="left" [class.bad]="r.daysLeft < 0">{{ r.daysLeft > 0 ? r.daysLeft + ' days left' : r.daysLeft === 0 ? 'Ends today' : -r.daysLeft + ' days past end' }}</span>
+              }
+            </td>
+            <td class="nowrap">
+              @if (r.p.objectives.length) {
+                <span class="obj"><b>{{ r.met }}</b>/{{ r.p.objectives.length }} met</span>
+                @if (r.risk) { <span class="risk"><i class="fa-solid fa-triangle-exclamation"></i>{{ r.risk }} at risk</span> }
+              } @else { <span class="muted small">Not set</span> }
+            </td>
+            <td class="nowrap">
+              <div class="dots" [title]="r.done + ' of ' + r.p.checkIns.length + ' check-ins done'">
+                @for (c of r.p.checkIns; track c.due) { <i [class.done]="c.rmOn" [class.late]="!c.rmOn && c.due < today"></i> }
+              </div>
+              @if (r.next && r.stage !== 'Awaiting Objectives') { <span class="next" [class.bad]="r.nextLate">{{ r.nextLate ? 'Overdue since' : 'Next' }} {{ r.next.due | date: 'dd MMM' }}</span> }
+            </td>
+            <td><span class="pill" [attr.data-s]="r.stage">{{ r.stage }}</span></td>
+            <td class="text-end"><a class="btn-table t-blue" title="Open PIP" [attr.aria-label]="'Open PIP for ' + r.e.name" [routerLink]="['/probation/pip', r.e.code]"><i class="fa-regular fa-eye"></i></a></td>
+          </tr>
+        } @empty {
+          <tr><td colspan="8" class="empty">
+            @if (rows().length) { No PIPs match your filters } @else { <i class="fa-solid fa-route"></i><b>No PIPs yet</b><span>A PIP starts when HR extends a probation from the <a routerLink="/probation/list">Probation List</a>.</span> }
+          </td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

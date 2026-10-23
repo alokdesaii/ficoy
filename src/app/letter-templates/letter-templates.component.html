@@ -1,0 +1,63 @@
+<div class="page-head">
+  <div>
+    <h2 class="page-main-heading">Letter Templates</h2>
+    <p class="sub">Letters are drafted automatically when HR records a decision.</p>
+  </div>
+</div>
+
+<div class="kinds" role="tablist">
+  @for (t of [{ k: 'confirmation', l: 'Confirmation', i: 'fa-circle-check' }, { k: 'extension', l: 'Extension', i: 'fa-route' }, { k: 'termination', l: 'Termination', i: 'fa-circle-xmark' }]; track t.k) {
+    <button role="tab" [attr.data-k]="t.k" [class.on]="kind() === t.k" [attr.aria-selected]="kind() === t.k" (click)="switchTo($any(t.k))"><i class="fa-solid" [class]="'fa-solid ' + t.i"></i>{{ t.l }} Letter</button>
+  }
+</div>
+
+<div class="layout">
+  <section class="panel editor">
+    <div class="field">
+      <label class="form-label" for="subj">Subject</label>
+      <input id="subj" class="form-control" [(ngModel)]="draft().subject" (ngModelChange)="touch()" />
+    </div>
+    <div class="field">
+      <label class="form-label" for="body">Body</label>
+      <div class="chips" aria-label="Insert merge field">
+        @for (f of fields(); track f.key) { <button type="button" (click)="insert(f.key)" [title]="'Insert {{' + f.key + '}}'"><i class="fa-solid fa-plus"></i>{{ f.label }}</button> }
+      </div>
+      <textarea #body id="body" class="form-control body" rows="16" [(ngModel)]="draft().body" (ngModelChange)="touch()" spellcheck="true"></textarea>
+      @if (unknown().length) { <div class="invalid-feedback d-block"><i class="fa-solid fa-circle-exclamation"></i> Unknown field{{ unknown().length > 1 ? 's' : '' }}: {{ unknown().join(', ') }}</div> }
+    </div>
+    <div class="sig">
+      <div class="field"><label class="form-label" for="sn">Signed by</label><input id="sn" class="form-control" [(ngModel)]="draft().signatory" (ngModelChange)="touch()" /></div>
+      <div class="field"><label class="form-label" for="st">Title</label><input id="st" class="form-control" [(ngModel)]="draft().signatoryTitle" (ngModelChange)="touch()" /></div>
+    </div>
+    <label class="check"><input type="checkbox" class="form-check-input" [(ngModel)]="draft().needsApproval" (ngModelChange)="touch()" />HR approves each letter before it's sent</label>
+
+    <div class="foot">
+      <span class="muted">@if (saved() && !dirty()) { <i class="fa-solid fa-circle-check ok"></i>Saved } @else if (dirty()) { Unsaved changes } @else { Last updated {{ draft().updatedAt | date: 'd MMM y' }} }</span>
+      <button class="btn btn-cancel" (click)="discard()" [disabled]="!dirty()">Discard</button>
+      <button class="btn btn-primary" (click)="save()" [disabled]="!dirty() || unknown().length > 0">Save Template</button>
+    </div>
+  </section>
+
+  <section class="preview-col">
+    <div class="pv-bar">
+      <label for="pf">Preview for</label>
+      <select id="pf" class="form-select" [ngModel]="previewFor()" (ngModelChange)="previewFor.set($event)">
+        @for (n of names(); track n) { <option [value]="n">{{ n }}</option> }
+      </select>
+      <button class="btn btn-cancel" (click)="print()"><i class="fa-solid fa-print"></i>Print</button>
+    </div>
+    <article class="letter">
+      <header>
+        <img src="assets/images/hnh-logo.png" alt="Harbour and Hills Financial Services Limited" />
+        <p class="addr">@for (l of company.address; track l) { {{ l }}<br /> }</p>
+      </header>
+      <hr />
+      <p class="date">{{ ctx()['letter_date'] }}</p>
+      <p class="to"><b>{{ ctx()['employee_name'] }}</b><br />{{ ctx()['designation'] }}, {{ ctx()['department'] }}<br />Employee code {{ ctx()['employee_code'] }}</p>
+      <p class="subj">Subject: {{ subject() }}</p>
+      <div class="text">{{ rendered() }}</div>
+      <div class="sign"><p>Yours sincerely,</p><div class="line"></div><b>{{ draft().signatory }}</b><span>{{ draft().signatoryTitle }}</span><span>Harbour and Hills Financial Services Limited</span></div>
+      @if (draft().needsApproval) { <span class="stamp">Requires HR approval</span> }
+    </article>
+  </section>
+</div>

@@ -1,0 +1,125 @@
+@if (e() && p() && t(); as t) {
+  <div class="page-head">
+    <div class="crumb"><a routerLink="/probation/list"><i class="fa-solid fa-arrow-left"></i>Probation List</a></div>
+  </div>
+
+  <div class="hero">
+    <div class="who">
+      <span class="av">{{ initials(e()!.name) }}</span>
+      <div>
+        <h2>{{ e()!.name }} <span class="pill" [attr.data-s]="t.stage">{{ t.stage }}</span></h2>
+        <p>{{ e()!.designation }} · {{ e()!.department }} · {{ p()!.type }} · {{ e()!.code }}</p>
+        <p class="rm"><i class="fa-solid fa-user-tie"></i>Reporting Manager: <b>{{ e()!.manager || 'Not assigned' }}</b></p>
+      </div>
+    </div>
+    <div class="actions">
+      @if (!closed()) {
+        <button class="btn btn-cancel" (click)="remind()"><i class="fa-regular fa-bell"></i>Send Reminder</button>
+        @if (!p()!.extendedTo) { <a class="btn btn-primary" [routerLink]="['/probation/decide', e()!.code]"><i class="fa-solid fa-gavel"></i>Make Decision</a> }
+        @else { <a class="btn btn-primary" [routerLink]="['/probation/pip', e()!.code]"><i class="fa-solid fa-route"></i>Open PIP</a> }
+      }
+    </div>
+  </div>
+  @if (resent() === 'remind') { <p class="toast"><i class="fa-solid fa-circle-check"></i>Reminder sent to {{ e()!.name }} and {{ e()!.manager || 'HR' }}</p> }
+
+  <div class="dates">
+    <div><span>Start</span><b>{{ t.start | date: 'dd MMM y' }}</b></div>
+    <div><span>Original end</span><b>{{ t.baseEnd | date: 'dd MMM y' }}</b></div>
+    <div [class.hl]="t.adj.days"><span>Leave adjustment</span><b>{{ t.adj.days ? '+' + t.adj.days + ' days' : 'None' }}</b></div>
+    @if (p()!.extendedTo) { <div class="hl"><span>Extended to</span><b>{{ p()!.extendedTo | date: 'dd MMM y' }}</b></div> }
+    <div class="strong"><span>{{ closed() ? 'Closed on' : 'Current end' }}</span><b>{{ (closed() ? p()!.decidedOn : t.end) | date: 'dd MMM y' }}</b></div>
+    @if (!closed()) {
+      <div class="prog"><span>{{ left(t.daysLeft) }}</span>
+        <div class="bar" [attr.data-s]="t.stage"><i [style.width.%]="t.progress * 100"></i></div></div>
+    }
+  </div>
+
+  <div class="grid">
+    <div class="panel">
+      <div class="tabs" role="tablist">
+        <button role="tab" [class.on]="tab() === 'timeline'" (click)="tab.set('timeline')">Timeline</button>
+        <button role="tab" [class.on]="tab() === 'notifications'" (click)="tab.set('notifications')">Notifications <span class="n">{{ sent().length }}</span></button>
+        <button role="tab" [class.on]="tab() === 'audit'" (click)="tab.set('audit')">Audit Trail</button>
+      </div>
+
+      @switch (tab()) {
+        @case ('timeline') {
+          <ol class="tl">
+            @for (m of ms(); track m.date + m.label) {
+              <li [class.done]="m.done" [class.next]="m === next()" [attr.data-k]="m.kind">
+                <span class="dot"><i [class]="icon(m.kind)"></i></span>
+                <div class="body">
+                  <b>{{ m.label }}</b>
+                  <span class="when">{{ m.date | date: 'EEE, dd MMM y' }}@if (m === next()) { · <em>next</em> }@if (m.note) { · {{ m.note }} }</span>
+                </div>
+                <span class="state">{{ m.done ? 'Done' : 'Upcoming' }}</span>
+              </li>
+            }
+          </ol>
+        }
+        @case ('notifications') {
+          <p class="meta">Sent via {{ channels() }}. Recipients follow <a routerLink="/probation/settings">Probation Settings</a>.</p>
+          <ul class="notes">
+            @for (n of sent(); track n.m.date + n.m.label) {
+              <li>
+                <span class="ni"><i [class]="icon(n.m.kind)"></i></span>
+                <div class="body">
+                  <b>{{ label(n.m.event!) }}</b>
+                  <span class="when">{{ n.m.date | date: 'dd MMM y' }} · {{ n.m.label }}</span>
+                  <span class="to">@for (r of n.to; track r) { <em>{{ r }}: {{ who(r) }}</em> }</span>
+                </div>
+                <span class="ok"><i class="fa-solid fa-check"></i>Delivered</span>
+                <button class="btn btn-cancel btn-sm-row" (click)="resend(n.m)" [disabled]="resent() === n.m.date + n.m.label">
+                  {{ resent() === n.m.date + n.m.label ? 'Resent' : 'Resend' }}</button>
+              </li>
+            } @empty { <li class="empty">No notifications sent yet</li> }
+          </ul>
+        }
+        @case ('audit') {
+          <table class="table">
+            <thead><tr><th>When</th><th>By</th><th>Action</th></tr></thead>
+            <tbody>
+              @for (a of audit(); track a.at + a.action) {
+                <tr><td class="num">{{ a.at | date: (a.at.length > 10 ? 'dd MMM y, hh:mm a' : 'dd MMM y') }}</td><td class="nowrap">{{ a.by }}</td><td>{{ a.action }}</td></tr>
+              }
+            </tbody>
+          </table>
+        }
+      }
+    </div>
+
+    <aside class="side">
+      <div class="panel">
+        <h3 class="sub-heading">Reviews</h3>
+        <ul class="reviews">
+          <li [class.done]="p()!.employeeReviewOn">
+            <i class="fa-solid" [class.fa-circle-check]="p()!.employeeReviewOn" [class.fa-hourglass-half]="!p()!.employeeReviewOn"></i>
+            <div><b>Self review</b><span>{{ p()!.employeeReviewOn ? 'Submitted ' + (p()!.employeeReviewOn | date: 'd MMM y') : 'Waiting for ' + e()!.name.split(' ')[0] }}</span></div>
+            <a class="go" [routerLink]="['/probation/review/self', e()!.code]">{{ p()!.employeeReviewOn ? 'View' : 'Open' }}</a>
+          </li>
+          <li [class.done]="p()!.rmReviewOn">
+            <i class="fa-solid" [class.fa-circle-check]="p()!.rmReviewOn" [class.fa-hourglass-half]="!p()!.rmReviewOn"></i>
+            <div><b>RM review</b><span>{{ p()!.rmReviewOn ? 'Submitted ' + (p()!.rmReviewOn | date: 'd MMM y') : 'Waiting for ' + (e()!.manager || 'RM') }}</span></div>
+            <a class="go" [routerLink]="['/probation/review/rm', e()!.code]">{{ p()!.rmReviewOn ? 'View' : 'Open' }}</a>
+          </li>
+          <li [class.done]="closed()">
+            <i class="fa-solid" [class.fa-circle-check]="closed()" [class.fa-gavel]="!closed()"></i>
+            <div><b>HR decision</b><span>{{ closed() ? p()!.outcome + ' · ' + (p()!.decidedOn | date: 'd MMM y') : p()!.extendedTo ? 'Extended · PIP outcome due ' + (p()!.extendedTo | date: 'd MMM y') : s().blockDecisionUntilBothReviews && !(p()!.employeeReviewOn && p()!.rmReviewOn) ? 'Unlocks after both reviews' : 'Ready for HR' }}</span></div>
+            @if (!closed() && !p()!.extendedTo) { <a class="go" [routerLink]="['/probation/decide', e()!.code]">Decide</a> }
+          </li>
+        </ul>
+      </div>
+
+      <div class="panel">
+        <h3 class="sub-heading">Leave Adjustments</h3>
+        @for (l of t.adj.items; track l.from) {
+          <div class="leave"><b>{{ l.type }}</b><span>{{ l.from | date: 'd MMM' }} – {{ l.to | date: 'd MMM y' }}</span><em>+{{ l.days }} days</em></div>
+        } @empty {
+          <p class="muted">No eligible leave. {{ s().leaveTypes.join(' or ') }} of {{ s().leaveMinConsecutiveDays }}+ consecutive days would move the end date.</p>
+        }
+      </div>
+    </aside>
+  </div>
+} @else {
+  <div class="panel empty">No probation record found. <a routerLink="/probation/list">Back to the list</a></div>
+}

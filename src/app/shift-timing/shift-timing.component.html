@@ -1,0 +1,92 @@
+<div class="page-head">
+  <h2 class="page-main-heading">Shift Timing</h2>
+</div>
+
+<div class="layout">
+  <form class="panel" [formGroup]="form" (ngSubmit)="save()" novalidate>
+    <h3 class="sub-heading">{{ editing() ? 'Edit Shift Timing' : 'Add Shift Timing' }}</h3>
+
+    <div class="field">
+      <label class="form-label" for="shiftName">Shift Name<span class="req">*</span></label>
+      <select id="shiftName" class="form-select" formControlName="shiftName"
+              [class.is-invalid]="form.controls.shiftName.invalid && form.controls.shiftName.touched">
+        <option value="">Select shift</option>
+        @for (n of shiftNames; track n) { <option [value]="n">{{ n }}</option> }
+      </select>
+      @if (form.controls.shiftName.invalid && form.controls.shiftName.touched) {
+        <div class="invalid-feedback d-block">Shift name is required</div>
+      }
+    </div>
+
+    @for (t of ['start', 'end']; track t) {
+      <div class="field">
+        <label class="form-label">Shift {{ t === 'start' ? 'Start' : 'End' }} Time</label>
+        <div class="time">
+          <select class="form-select" [formControlName]="t + 'Hour'" [attr.aria-label]="t + ' hour'">
+            @for (h of hours; track h) { <option [value]="h">{{ h }}</option> }
+          </select>
+          <span class="colon">:</span>
+          <select class="form-select" [formControlName]="t + 'Minute'" [attr.aria-label]="t + ' minute'">
+            @for (m of minutes; track m) { <option [value]="m">{{ m }}</option> }
+          </select>
+          <select class="form-select" [formControlName]="t + 'Ampm'" [attr.aria-label]="t + ' AM/PM'">
+            <option value="AM">AM</option><option value="PM">PM</option>
+          </select>
+        </div>
+      </div>
+    }
+
+    <div class="field">
+      <label class="form-label" for="grace">Grace Time (Minutes)<span class="req">*</span></label>
+      <input id="grace" class="form-control" type="number" min="0" max="120" formControlName="grace"
+             [class.is-invalid]="form.controls.grace.invalid && form.controls.grace.touched" />
+      @if (form.controls.grace.invalid && form.controls.grace.touched) {
+        <div class="invalid-feedback d-block">Enter 0–120 minutes</div>
+      }
+    </div>
+
+    <div class="actions">
+      <button type="button" class="btn btn-cancel" (click)="reset()">{{ editing() ? 'Cancel' : 'Reset' }}</button>
+      <button type="submit" class="btn btn-primary">{{ editing() ? 'Update' : 'Save' }}</button>
+    </div>
+  </form>
+
+  <div class="panel">
+    <div class="table-responsive">
+      <table class="table">
+        <thead><tr><th>Shift Name</th><th>Office Time</th><th>Grace</th><th class="text-end">Actions</th></tr></thead>
+        <tbody>
+          @for (s of shifts(); track s.name + s.start) {
+            <tr [class.row-editing]="editing() === s">
+              <td class="fw-medium">{{ s.name }}</td>
+              <td class="nowrap">{{ s.start }} – {{ s.end }}</td>
+              <td class="nowrap">{{ s.grace }} min</td>
+              <td class="text-end nowrap">
+                <button class="btn-table t-green" title="Edit" [attr.aria-label]="'Edit ' + s.name" (click)="edit(s)"><i class="fa-regular fa-pen-to-square"></i></button>
+                <button class="btn-table t-red" title="Delete" [attr.aria-label]="'Delete ' + s.name" (click)="toDelete.set(s)"><i class="fa-regular fa-trash-can"></i></button>
+              </td>
+            </tr>
+          } @empty {
+            <tr><td colspan="4" class="empty">No shifts yet. Add one using the form.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+@if (toDelete(); as s) {
+  <div class="backdrop" (click)="toDelete.set(null)">
+    <div class="dialog" role="alertdialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <div class="dialog-head">
+        <h4>Confirm Delete</h4>
+        <button class="btn-close-popup" (click)="toDelete.set(null)" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="dialog-body">Are you sure you want to delete <b>{{ s.name }}</b>? Employees on this shift will need a new one.</div>
+      <div class="dialog-foot">
+        <button class="btn btn-cancel" (click)="toDelete.set(null)">Cancel</button>
+        <button class="btn btn-danger" (click)="confirmDelete()">Delete</button>
+      </div>
+    </div>
+  </div>
+}

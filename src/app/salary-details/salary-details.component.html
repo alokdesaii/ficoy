@@ -1,0 +1,73 @@
+<ng-template #lines let-list let-types="types" let-label="label">
+  @for (l of list(); track $index; let i = $index) {
+    <div class="line">
+      <select class="form-select" [(ngModel)]="l.type" (ngModelChange)="touch(list)" [attr.aria-label]="label + ' type'"
+              [class.is-invalid]="submitted() && !l.type">
+        <option value="">Select {{ label.toLowerCase() }} type</option>
+        @for (t of types; track t) { <option [value]="t" [disabled]="taken(list(), i).has(t)">{{ t }}</option> }
+      </select>
+      <div class="money">
+        <span>HK$</span>
+        <input class="form-control" type="number" min="0" step="0.01" placeholder="0.00" [(ngModel)]="l.amount" (ngModelChange)="touch(list)"
+               [attr.aria-label]="label + ' amount'" [class.is-invalid]="submitted() && (l.amount === null || l.amount < 0)" />
+      </div>
+      <button type="button" class="btn-table t-red" (click)="remove(list, i)" [attr.aria-label]="'Remove ' + label.toLowerCase() + ' row'" title="Remove">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+  }
+  <button type="button" class="add-line" (click)="add(list)"><i class="fa-solid fa-plus"></i>Add {{ label.toLowerCase() }}</button>
+</ng-template>
+
+<div class="page-head">
+  <div>
+    <h2 class="page-main-heading">Update Salary Details</h2>
+    @if (e) { <p class="for">{{ e.name }} · {{ e.code }}</p> }
+  </div>
+  <a [routerLink]="['/employeeedit', e?.code]" class="btn btn-cancel"><i class="fa-solid fa-arrow-left"></i>Back</a>
+</div>
+
+<div class="cols">
+  <div class="panel">
+    <h3 class="sub-heading">Monthly Salary Breakup</h3>
+
+    <div class="field">
+      <label class="form-label" for="basic">Basic Salary<span class="req">*</span></label>
+      <div class="money">
+        <span>HK$</span>
+        <input id="basic" class="form-control" type="number" min="0" [ngModel]="basic()" (ngModelChange)="basic.set($event)"
+               [class.is-invalid]="submitted() && !basic()" />
+      </div>
+      @if (submitted() && !basic()) { <div class="invalid-feedback d-block">Basic salary is required</div> }
+    </div>
+
+    <label class="form-label mt-3">Additional Earnings</label>
+    <ng-container *ngTemplateOutlet="lines; context: { $implicit: earnings, types: earningTypes, label: 'Earning' }" />
+
+    <div class="total"><span>Total Earnings</span><b>HK$ {{ totalEarnings() | number: '1.2-2' }}</b></div>
+
+    <div class="mpf">
+      <div class="form-check m-0">
+        <input id="mpfEligible" type="checkbox" class="form-check-input" [ngModel]="mpfEligible()" (ngModelChange)="mpfEligible.set($event)" />
+        <label for="mpfEligible" class="form-check-label">MPF Eligible</label>
+      </div>
+      <div class="field">
+        <label class="form-label" for="mpfStart">MPF Start Date@if (mpfEligible()) {<span class="req">*</span>}</label>
+        <input id="mpfStart" class="form-control" type="date" [disabled]="!mpfEligible()" [ngModel]="mpfStart()" (ngModelChange)="mpfStart.set($event)"
+               [class.is-invalid]="submitted() && mpfEligible() && !mpfStart()" />
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3 class="sub-heading">Monthly Salary Deductions</h3>
+    <ng-container *ngTemplateOutlet="lines; context: { $implicit: deductions, types: deductionTypes, label: 'Deduction' }" />
+    <div class="total"><span>Total Deductions</span><b>HK$ {{ totalDeductions() | number: '1.2-2' }}</b></div>
+  </div>
+</div>
+
+<div class="form-actions">
+  @if (submitted() && invalid) { <span class="err">Fix the highlighted fields to continue</span> }
+  <a [routerLink]="['/employeeedit', e?.code]" class="btn btn-cancel">Cancel</a>
+  <button type="button" class="btn btn-primary" (click)="save()">Update Salary Details</button>
+</div>

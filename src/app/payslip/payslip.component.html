@@ -1,0 +1,69 @@
+<div class="backdrop" (click)="closed.emit()">
+  <div class="dialog slip-dialog" role="dialog" aria-modal="true" [attr.aria-label]="'Payslip ' + (monthDate() | date: 'MMMM y')" (click)="$event.stopPropagation()">
+    <div class="dialog-head">
+      <h4>Payslip</h4>
+      <button class="btn-close-popup" (click)="closed.emit()" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <div class="dialog-body">
+      @if (s(); as s) {
+        <article class="slip">
+          <section class="top">
+            <header class="head">
+              <img src="assets/images/hnh-logo.png" alt="Harbour and Hills Financial Services Limited" />
+              <div class="right">
+                <span class="kicker">Employee Payslip</span>
+                <h2>{{ monthDate() | date: 'MMMM y' }}</h2>
+                <p class="addr">@for (l of company.address; track l) { {{ l }}<br /> }</p>
+              </div>
+            </header>
+            <hr class="rule" />
+
+            <table class="box">
+              <tr><th colspan="4" class="band">Employee Details</th></tr>
+              <tr><td class="k">Employee Name</td><td class="v">{{ employee() }}</td><td class="k split">Employee Code</td><td class="v">{{ e()?.code }}</td></tr>
+              <tr><td class="k">Designation</td><td class="v">{{ e()?.designation }}</td><td class="k split">Department</td><td class="v">{{ e()?.department }}</td></tr>
+              <tr><td class="k">National ID</td><td class="v">{{ e()?.nationalId }}</td><td class="k split">Date Joined</td><td class="v">{{ e()?.joined | date: 'dd MMM y' }}</td></tr>
+            </table>
+          </section>
+
+          <section class="bottom">
+            <table class="box">
+              <tr><th colspan="4" class="band">Salary Details</th></tr>
+              <tr class="days">
+                <td><span>Total Month Days</span><b>{{ days() }}</b></td>
+                <td><span>Total Days</span><b>{{ days() - lop() }}</b></td>
+                <td><span>Sick Leave Days</span><b>{{ sick() }}</b></td>
+                <td><span>Loss of Pay Days</span><b>{{ lop() }}</b></td>
+              </tr>
+            </table>
+
+            <div class="money">
+              @for (side of [{ t: 'Earnings', lines: s.earnings, sum: 'Total Earnings (A)' }, { t: 'Deductions', lines: s.deductions, sum: 'Total Deductions (B)' }]; track side.t) {
+                <table>
+                  <tr><th colspan="2">{{ side.t }}</th></tr>
+                  @for (l of side.lines; track l.label) { <tr><td class="k">{{ l.label }}</td><td class="v">{{ l.amount | number: '1.2-2' }}</td></tr> }
+                  <tr class="sum"><td class="k">{{ side.sum }}</td><td class="v">{{ total(side.lines) | number: '1.2-2' }}</td></tr>
+                </table>
+              }
+            </div>
+
+            <table class="net">
+              <tr><td class="lbl">Net Salary Payable (A − B)</td><td>{{ net(s) | number: '1.2-2' }}</td></tr>
+              <tr><td class="lbl">Net Salary in Words</td><td>{{ words(net(s)) }}</td></tr>
+            </table>
+          </section>
+
+          <footer class="foot">*This is a computer-generated statement and does not require a signature.</footer>
+        </article>
+      } @else {
+        <p class="empty">No salary details found for {{ employee() }}.</p>
+      }
+    </div>
+
+    <div class="dialog-foot">
+      <button class="btn btn-cancel" (click)="closed.emit()">Close</button>
+      <button class="btn btn-primary" (click)="print()" [disabled]="!s()"><i class="fa-regular fa-file-pdf"></i>Download Payslip</button>
+    </div>
+  </div>
+</div>

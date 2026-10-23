@@ -1,0 +1,54 @@
+<div class="page-head">
+  <div>
+    <h2 class="page-main-heading">Probation Reports</h2>
+    <p class="sub">Choose a report, filter it, and export to Excel.</p>
+  </div>
+</div>
+
+<div class="picker" role="tablist">
+  @for (r of reports; track r.k) {
+    <button role="tab" [class.on]="key() === r.k" [attr.aria-selected]="key() === r.k" (click)="key.set(r.k)">
+      <i [class]="r.i"></i><b>{{ r.t }}</b><span>{{ r.d }}</span>
+    </button>
+  }
+</div>
+
+<div class="panel">
+  <div class="toolbar">
+    <h3 class="sub-heading m-0">{{ title() }}</h3>
+    <div class="filters">
+      <label>From <input class="form-control" type="date" [class.date-empty]="!from()" [max]="to() || null" [ngModel]="from()" (ngModelChange)="from.set($event)" [attr.aria-label]="'From ' + report().date" /></label>
+      <label>To <input class="form-control" type="date" [class.date-empty]="!to()" [min]="from() || null" [ngModel]="to()" (ngModelChange)="to.set($event)" [attr.aria-label]="'To ' + report().date" /></label>
+      <select class="form-select" aria-label="Department" [ngModel]="dept()" (ngModelChange)="dept.set($event)">
+        <option value="">All departments</option>
+        @for (d of departments(); track d.id) { <option [value]="d.name">{{ d.name }}</option> }
+      </select>
+      @if (from() || to() || dept()) { <button class="btn btn-cancel" (click)="clear()">Clear</button> }
+      <button class="btn btn-accent" (click)="export()" [disabled]="!report().rows.length"><i class="fa-solid fa-file-excel"></i>Export</button>
+    </div>
+  </div>
+  <p class="summary"><i class="fa-solid fa-chart-simple"></i>{{ report().summary }}@if (from() || to()) { <span> · filtered by {{ report().date }}</span> }</p>
+
+  <div class="table-responsive">
+    <table stack class="table">
+      <thead><tr>@for (c of report().cols; track c.k) { <th [class.text-end]="c.num">{{ c.h }}</th> }</tr></thead>
+      <tbody>
+        @for (row of report().rows; track $index) {
+          <tr>
+            @for (c of report().cols; track c.k) {
+              <td [class.text-end]="c.num" [class.num]="c.num">
+                @if (c.k === 'name' && row['code']) { <a [routerLink]="['/probation/view', row['code']]">{{ row[c.k] }}</a> }
+                @else if (isTag(c.k)) { <span class="tag" [attr.data-t]="tone(row[c.k])">{{ row[c.k] }}</span> }
+                @else { {{ row[c.k] }} }
+              </td>
+            }
+          </tr>
+        } @empty {
+          <tr><td [attr.colspan]="report().cols.length" class="empty">
+            {{ key() === 'audit' ? 'No manual actions yet. Reminders, resends and decisions made in this session appear here.' : 'Nothing matches these filters.' }}
+          </td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

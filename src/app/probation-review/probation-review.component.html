@@ -1,0 +1,164 @@
+@if (e() && p() && t(); as t) {
+  <div class="page-head">
+    <div>
+      <a class="crumb" [routerLink]="['/probation/view', code]"><i class="fa-solid fa-arrow-left"></i>{{ e()!.name }}'s probation</a>
+      <h2 class="page-main-heading">{{ by === 'self' ? 'Self Review' : 'RM Review' }}</h2>
+      <p class="sub">{{ by === 'self' ? 'Reflect on your probation so far. Your RM reviews you separately, and HR sees both.' : 'Rate ' + e()!.name + '\'s probation and recommend an outcome.' }}</p>
+    </div>
+    @if (locked()) { <span class="pill ok"><i class="fa-solid fa-lock"></i>Submitted {{ r().submittedOn | date: 'd MMM y' }}</span> }
+  </div>
+
+  @if (!open()) {
+    <div class="panel closed">
+      <i class="fa-regular fa-calendar"></i>
+      <div><b>Reviews open on {{ t.reviewOpens | date: 'd MMMM y' }}</b><span>{{ s().reviewOpensDaysBefore }} days before probation ends on {{ t.end | date: 'd MMM y' }}. You'll get a reminder.</span></div>
+    </div>
+  } @else {
+    <div class="layout">
+      <div class="main">
+        <section class="panel">
+          <div class="sec-head">
+            <h3 class="sub-heading m-0">Ratings</h3>
+            <span class="prog">{{ rated() }} of {{ s().criteria.length }} rated</span>
+          </div>
+          <div class="legend">@for (l of s().scale; track $index) { <span><b>{{ $index + 1 }}</b>{{ l }}</span> }</div>
+
+          @for (c of s().criteria; track c) {
+            <div class="crit" [class.err]="tried() && (!r().ratings[c] || (needsNote(c) && empty(r().notes[c])))">
+              <div class="crit-top">
+                <b>{{ c }}</b>
+                <div class="scale" role="radiogroup" [attr.aria-label]="c">
+                  @for (l of s().scale; track $index; let n = $index) {
+                    <button type="button" role="radio" [attr.aria-checked]="r().ratings[c] === n + 1" [class.on]="r().ratings[c] === n + 1"
+                            [class.low]="n + 1 <= s().commentRequiredAtOrBelow" [title]="l" [disabled]="locked()" (click)="rate(c, n + 1)">{{ n + 1 }}</button>
+                  }
+                </div>
+                <span class="lbl">{{ r().ratings[c] ? s().scale[r().ratings[c] - 1] : 'Not rated' }}
+                  @if (by === 'rm' && self()?.ratings?.[c]) {
+                    <em class="self" [class.diff]="gap(c) <= -2 || gap(c) >= 2" [title]="'Employee rated ' + self()!.ratings[c]">Self: {{ self()!.ratings[c] }}@if (gap(c)) { <small>({{ gap(c) > 0 ? '+' : '' }}{{ gap(c) }})</small> }</em>
+                  }
+                </span>
+              </div>
+              @if (needsNote(c) || showNote().has(c) || r().notes[c]) {
+                <textarea class="form-control" rows="2" [placeholder]="needsNote(c) ? 'Required: explain this rating' : 'Optional comment'" [(ngModel)]="r().notes[c]" (ngModelChange)="touch()" [disabled]="locked()"
+                          [class.is-invalid]="tried() && needsNote(c) && empty(r().notes[c])" [attr.aria-label]="'Comment on ' + c"></textarea>
+              } @else if (!locked()) {
+                <button type="button" class="add-note" (click)="toggleNote(c)"><i class="fa-regular fa-comment"></i>Add comment</button>
+              }
+            </div>
+          }
+        </section>
+
+        @if (by === 'rm') {
+          <section class="panel">
+            <h3 class="sub-heading">Employee's Self Review</h3>
+            @if (selfIn()) {
+              <dl class="self-ans">
+                @for (q of selfQuestions; track q.key) { <div><dt>{{ q.label }}</dt><dd [class.dash]="!self()!.answers[q.key]">{{ self()!.answers[q.key] || 'Not answered' }}</dd></div> }
+              </dl>
+            } @else {
+              <p class="note-info"><i class="fa-solid fa-circle-info"></i>{{ e()!.name.split(' ')[0] }} hasn't submitted a self review yet. You can still complete yours; HR will see both once they're in.</p>
+            }
+          </section>
+        }
+
+        <section class="panel">
+            <h3 class="sub-heading">{{ by === 'self' ? 'Your Reflection' : 'Your Assessment' }}</h3>
+            @for (q of questions; track q.key) {
+              <div class="field q">
+                <label class="form-label" [for]="q.key">{{ q.label }}@if (q.required) {<span class="req">*</span>} @else { <span class="opt">(optional)</span> }</label>
+                <textarea [id]="q.key" class="form-control" rows="3" [(ngModel)]="r().answers[q.key]" (ngModelChange)="touch()" [disabled]="locked()" maxlength="1000"
+                          [class.is-invalid]="tried() && q.required && empty(r().answers[q.key])"></textarea>
+                <span class="count">{{ (r().answers[q.key] || '').length }}/1000</span>
+              </div>
+            }
+          </section>
+
+        @if (by === 'rm') {
+          <section class="panel">
+            <h3 class="sub-heading">Recommended Outcome</h3>
+            <p class="hint">Based on your ratings the policy suggests <b class="sg" [attr.data-o]="suggested()">{{ suggested() }}</b>@if (avg()) { (average {{ avg().toFixed(1) }}) }. HR makes the final decision.</p>
+            <div class="outcomes" role="radiogroup" aria-label="Recommended outcome">
+              @for (o of outcomes; track o) {
+                <button type="button" role="radio" class="oc" [attr.data-o]="o" [class.on]="r().recommendation === o" [attr.aria-checked]="r().recommendation === o"
+                        [disabled]="locked() || (o === 'Extend' && !canExtend())" (click)="recommend(o)">
+                  <i class="fa-solid" [class.fa-circle-check]="o === 'Confirm'" [class.fa-route]="o === 'Extend'" [class.fa-circle-xmark]="o === 'Terminate'"></i>
+                  <b>{{ o === 'Extend' ? 'Extend probation' : o }}</b>
+                  <span>{{ o === 'Confirm' ? 'Make the employment permanent' : o === 'Extend' ? (canExtend() ? 'Up to ' + s().maxExtensionMonths + ' months' + (s().pipRequiredOnExtension ? ' with a PIP' : '') : 'Extension limit reached') : 'End employment at probation' }}</span>
+                  @if (o === suggested()) { <em>Suggested</em> }
+                </button>
+              }
+            </div>
+            @if (r().recommendation === 'Extend') {
+              <div class="follow">
+                <div class="field"><label class="form-label" for="xm">Extend by<span class="req">*</span></label>
+                  <select id="xm" class="form-select" [(ngModel)]="r().extendMonths" (ngModelChange)="touch()" [disabled]="locked()">
+                    @for (m of months(); track m) { <option [ngValue]="m">{{ m }} month{{ m > 1 ? 's' : '' }}</option> }
+                  </select></div>
+                <div class="field grow"><label class="form-label" for="pf">PIP focus areas@if (s().pipRequiredOnExtension) {<span class="req">*</span>}</label>
+                  <textarea id="pf" class="form-control" rows="3" placeholder="What must improve during the extension" [(ngModel)]="r().pipFocus" (ngModelChange)="touch()" [disabled]="locked()"
+                            [class.is-invalid]="tried() && s().pipRequiredOnExtension && empty(r().pipFocus)"></textarea></div>
+              </div>
+            }
+            @if (r().recommendation === 'Terminate') {
+              <div class="field mt-3"><label class="form-label" for="rs">Reason<span class="req">*</span></label>
+                <textarea id="rs" class="form-control" rows="3" placeholder="Why the employee should not be confirmed" [(ngModel)]="r().reason" (ngModelChange)="touch()" [disabled]="locked()"
+                          [class.is-invalid]="tried() && empty(r().reason)"></textarea></div>
+            }
+            @if (r().recommendation && r().recommendation !== suggested() && !locked()) {
+              <p class="note-info warn"><i class="fa-solid fa-triangle-exclamation"></i>This differs from the suggested outcome. Explain why in your assessment so HR has the context.</p>
+            }
+          </section>
+        }
+
+        @if (!locked()) {
+          <div class="bar">
+            @if (tried() && missing().length) {
+              <ul class="missing">@for (m of missing(); track m) { <li><i class="fa-solid fa-circle-exclamation"></i>{{ m }}</li> }</ul>
+            } @else {
+              <span class="muted">{{ savedMsg() || (r().savedAt ? 'Draft saved ' + (r().savedAt | date: 'd MMM, hh:mm a') : 'Not saved yet') }}</span>
+            }
+            <div class="btns">
+              <button class="btn btn-cancel" (click)="draft()">Save Draft</button>
+              <button class="btn btn-primary" (click)="submit()"><i class="fa-solid fa-paper-plane"></i>Submit Review</button>
+            </div>
+          </div>
+        }
+      </div>
+
+      <aside class="panel side">
+        <h3 class="sub-heading">Summary</h3>
+        <div class="score"><b>{{ avg() ? avg().toFixed(1) : '—' }}</b><span>average of {{ rated() }} rating{{ rated() === 1 ? '' : 's' }}</span></div>
+        <ul class="bars">
+          @for (c of s().criteria; track c) {
+            <li><span>{{ c }}</span><div class="b"><i [style.width.%]="(r().ratings[c] || 0) / s().scale.length * 100" [class.low]="needsNote(c)"></i></div></li>
+          }
+        </ul>
+        @if (by === 'rm') {
+          <div class="cmp"><span>Self average</span><b>{{ selfIn() ? (self()!.ratings ? avgOf(self()!).toFixed(1) : '—') : 'Not submitted' }}</b></div>
+          @if (r().recommendation) { <div class="cmp"><span>Recommending</span><b class="sg" [attr.data-o]="r().recommendation">{{ r().recommendation }}{{ r().recommendation === 'Extend' ? ' · ' + r().extendMonths + 'm' : '' }}</b></div> }
+        }
+        <dl class="facts">
+          <div><dt>Employee</dt><dd>{{ e()!.name }}</dd></div>
+          <div><dt>Reporting Manager</dt><dd>{{ e()!.manager || '—' }}</dd></div>
+          <div><dt>Probation ends</dt><dd>{{ t.end | date: 'd MMM y' }}</dd></div>
+          <div><dt>Review due</dt><dd [class.bad]="t.daysLeft < 0">{{ t.daysLeft < 0 ? 'Overdue by ' + -t.daysLeft + ' days' : 'In ' + t.daysLeft + ' days' }}</dd></div>
+        </dl>
+      </aside>
+    </div>
+  }
+
+  @if (confirming()) {
+    <div class="backdrop" (click)="confirming.set(false)">
+      <div class="dialog" role="alertdialog" aria-modal="true" (click)="$event.stopPropagation()">
+        <div class="dialog-head"><h4>Submit review?</h4>
+          <button class="btn-close-popup" (click)="confirming.set(false)" aria-label="Close"><i class="fa-solid fa-xmark"></i></button></div>
+        <div class="dialog-body">You won't be able to edit it afterwards. {{ by === 'self' ? 'Your RM and HR will be notified.' : 'HR will be notified to make a decision.' }}
+          <p class="avg-line">Average rating: <b>{{ avg().toFixed(1) }}</b> / {{ s().scale.length }}@if (by === 'rm') { · Recommending <b>{{ r().recommendation }}</b> }</p></div>
+        <div class="dialog-foot"><button class="btn btn-cancel" (click)="confirming.set(false)">Keep Editing</button><button class="btn btn-primary" (click)="confirm()">Submit</button></div>
+      </div>
+    </div>
+  }
+} @else {
+  <div class="panel closed">No probation record found. <a routerLink="/probation/list">Back to the list</a></div>
+}

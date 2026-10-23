@@ -1,0 +1,36 @@
+<div class="page-head">
+  <h2 class="page-main-heading">{{ editing ? 'Edit Department' : 'Add Department' }}</h2>
+  <a routerLink="/departmentlist" class="btn btn-cancel"><i class="fa-solid fa-arrow-left"></i>Back</a>
+</div>
+
+<form class="panel" [formGroup]="form" (ngSubmit)="save()" novalidate>
+  <h3 class="sub-heading">Department Details</h3>
+  <div class="form-grid">
+    <div class="field">
+      <label class="form-label" for="name">Department Name<span class="req">*</span></label>
+      <input id="name" class="form-control" formControlName="name" placeholder="Enter department name" maxlength="60"
+             [class.is-invalid]="name.invalid && name.touched" />
+      @if (name.touched && name.hasError('required')) { <div class="invalid-feedback d-block">Department name is required</div> }
+      @if (name.touched && name.hasError('duplicate')) { <div class="invalid-feedback d-block">A department with this name already exists</div> }
+    </div>
+    <div class="field">
+      <label class="form-label" for="head">Head of Department</label>
+      <select id="head" class="form-select" formControlName="head">
+        <option value="">Select head of department</option>
+        @for (h of heads(); track h) { <option [value]="h">{{ h }}</option> }
+      </select>
+    </div>
+    <div class="field">
+      <label class="form-label" for="location">Location</label>
+      <select id="location" class="form-select" formControlName="location">
+        <option value="">Select location</option>
+        @for (l of locations; track l) { <option [value]="l">{{ l }}</option> }
+      </select>
+    </div>
+  </div>
+
+  <div class="form-actions">
+    <a routerLink="/departmentlist" class="btn btn-cancel">Cancel</a>
+    <button type="submit" class="btn btn-primary">{{ editing ? 'Update Department' : 'Save Department' }}</button>
+  </div>
+</form>

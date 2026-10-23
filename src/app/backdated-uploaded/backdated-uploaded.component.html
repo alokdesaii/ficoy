@@ -1,0 +1,81 @@
+<div class="page-head">
+  <h2 class="page-main-heading">Backdated Data Uploaded</h2>
+  <div class="d-flex gap-2">
+    <a routerLink="/importbackdatedpayroll" class="btn btn-cancel"><i class="fa-solid fa-file-import"></i>Import More</a>
+    <button class="btn btn-accent" (click)="export()" [disabled]="!filtered().length"><i class="fa-solid fa-file-excel"></i>Export to Excel</button>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="filters">
+    <div class="search">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input class="form-control" type="search" placeholder="Search by employee, ID or period" aria-label="Search" [ngModel]="search()" (ngModelChange)="set(search, $event)" />
+    </div>
+    <span class="count">{{ filtered().length }} record{{ filtered().length === 1 ? '' : 's' }}</span>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table">
+      <thead><tr>
+        <th>Employee</th><th>Period</th><th class="text-end">Gross Salary</th><th class="text-end">Days</th><th class="text-end">Days Worked</th>
+        <th class="text-end">Sick Leave</th><th class="text-end">LWP Days</th><th class="text-end">Avg Daily Wage</th><th class="text-end">LWP Deduction</th>
+        <th class="text-end">Total Salary</th><th>Created On</th><th class="text-end">Action</th>
+      </tr></thead>
+      <tbody>
+        @for (i of rows(); track i.key) {
+          <tr>
+            <td class="fw-medium wrap">{{ i.name }}<span class="id">{{ i.row.employeeId }}</span></td>
+            <td class="nowrap">{{ i.row.period }}</td>
+            <td class="num text-end">{{ i.row.gross | number: '1.2-2' }}</td>
+            <td class="num text-end">{{ i.row.days }}</td>
+            <td class="num text-end">{{ i.row.worked }}</td>
+            <td class="num text-end dash">0</td>
+            <td class="num text-end" [class.dash]="!lwp(i.row)">{{ lwp(i.row) }}</td>
+            <td class="num text-end">{{ daily(i.row) | number: '1.2-2' }}</td>
+            <td class="num text-end" [class.dash]="!lwpAmt(i.row)">{{ lwpAmt(i.row) | number: '1.2-2' }}</td>
+            <td class="num text-end fw-semibold">{{ i.row.total | number: '1.2-2' }}</td>
+            <td class="num">{{ i.createdOn | date: 'dd MMM yy' }}</td>
+            <td class="text-end"><button class="btn-table t-red" title="Delete" [attr.aria-label]="'Delete ' + i.row.period + ' for ' + i.name" (click)="toDelete.set(i)"><i class="fa-regular fa-trash-can"></i></button></td>
+          </tr>
+        } @empty {
+          <tr><td colspan="12" class="empty">
+            @if (items().length) { No records match your search }
+            @else { No backdated payroll uploaded yet. <a routerLink="/importbackdatedpayroll">Import a file</a> }
+          </td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pager">
+    <label class="size">Show
+      <select class="form-select" [ngModel]="size()" (ngModelChange)="set(size, +$event)">
+        @for (n of [25, 50, 75, 100]; track n) { <option [value]="n">{{ n }}</option> }
+      </select>
+      entries
+    </label>
+    <span>Showing {{ first() }}–{{ last() }} of {{ filtered().length }}</span>
+    <nav aria-label="Pagination">
+      <button (click)="go(page() - 1)" [disabled]="page() === 1" aria-label="Previous page"><i class="fa-solid fa-chevron-left"></i></button>
+      <span class="pg">Page {{ page() }} of {{ pages() }}</span>
+      <button (click)="go(page() + 1)" [disabled]="page() === pages()" aria-label="Next page"><i class="fa-solid fa-chevron-right"></i></button>
+    </nav>
+  </div>
+</div>
+
+@if (toDelete(); as i) {
+  <div class="backdrop" (click)="toDelete.set(null)">
+    <div class="dialog" role="alertdialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <div class="dialog-head">
+        <h4>Confirm Delete</h4>
+        <button class="btn-close-popup" (click)="toDelete.set(null)" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="dialog-body">Delete the backdated salary record for <b>{{ i.name }}</b> ({{ i.row.period }})? This can't be undone.</div>
+      <div class="dialog-foot">
+        <button class="btn btn-cancel" (click)="toDelete.set(null)">Cancel</button>
+        <button class="btn btn-danger" (click)="confirmDelete()">Delete</button>
+      </div>
+    </div>
+  </div>
+}

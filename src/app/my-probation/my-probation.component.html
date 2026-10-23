@@ -1,0 +1,104 @@
+<div class="page-head">
+  <div>
+    <h2 class="page-main-heading">My Probation</h2>
+    <p class="sub">Everything about your probation in one place.</p>
+  </div>
+  @if (isHr) {
+    <label class="as"><i class="fa-regular fa-eye"></i>Previewing as
+      <select class="form-select" [ngModel]="viewAs()" (ngModelChange)="viewAs.set($event)" aria-label="Preview as employee">
+        @for (n of people(); track n) { <option [value]="n">{{ n }}</option> }
+      </select></label>
+  }
+</div>
+
+@if (p() && t(); as t) {
+  <div class="hero" [attr.data-t]="status().tone">
+    <div class="ring" role="img" [attr.aria-label]="(decided() ? 'Completed' : (pct() * 100).toFixed(0) + '% complete')">
+      <svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" class="track" /><circle cx="60" cy="60" r="52" class="fill" [attr.stroke-dasharray]="dash()" /></svg>
+      <div class="c">@if (decided()) { <i class="fa-solid" [class.fa-check]="p()!.outcome === 'Confirmed'" [class.fa-flag-checkered]="p()!.outcome !== 'Confirmed'"></i> }
+        @else { <b>{{ t.daysLeft >= 0 ? t.daysLeft : 0 }}</b><span>days left</span> }</div>
+    </div>
+    <div class="msg">
+      <p class="hi">Hi {{ first() }},</p>
+      <h3>{{ status().title }}</h3>
+      <p>{{ status().text }}</p>
+    </div>
+  </div>
+
+      @if (todos().length) {
+        <section class="panel todo">
+          <h3 class="sub-heading">Your To-dos</h3>
+          @for (td of todos(); track td.text) {
+            <div class="td"><i class="fa-regular fa-square-check"></i><div><b>{{ td.text }}</b>@if (td.due) { <span>Due {{ td.due | date: 'd MMM y' }}</span> }</div>
+              <a class="btn btn-primary btn-sm-row" [routerLink]="td.link">{{ td.cta }}</a></div>
+          }
+        </section>
+      }
+
+  <section class="panel journey">
+        <div class="j-head">
+          <h3 class="sub-heading m-0">Your Journey</h3>
+          <span class="j-count">{{ nowAt() }} of {{ steps().length }} milestones</span>
+        </div>
+        <ol class="stepper" [style.--fill]="lineFill()" [style.--n]="steps().length">
+          @for (m of steps(); track m.date + m.label; let i = $index) {
+            <li [class.done]="m.done" [class.now]="i === nowAt()">
+              @if (i === nowAt()) { <span class="today">Today</span> }
+              <span class="node"><i [class]="m.icon"></i></span>
+              <div class="card">
+                <span class="date">{{ m.date | date: 'd MMM y' }}</span>
+                <b>{{ m.label }}</b>
+                <p>{{ m.desc }}</p>
+                <span class="state">{{ m.done ? 'Done' : i === nowAt() ? 'Up next' : 'Upcoming' }}</span>
+              </div>
+            </li>
+          }
+        </ol>
+  </section>
+
+      @if (pip(); as pip) {
+        <section class="panel pipsec mt-4">
+          <h3 class="sub-heading">Your Improvement Plan</h3>
+          <p class="help">{{ pip.start | date: 'd MMM' }} – {{ pip.end | date: 'd MMM y' }} · check-ins every {{ s().pipCheckpointEveryDays }} days with {{ e().manager || 'your manager' }}</p>
+          @if (!pip.objectivesApprovedOn) { <p class="note">Your manager is setting your objectives. You'll be notified when they're ready.</p> }
+          <ul class="objs">
+            @for (o of pip.objectives; track o.title) { <li><div><b>{{ o.title }}</b><span>{{ o.measure }}</span></div><em [attr.data-st]="o.status">{{ o.status }}</em></li> }
+          </ul>
+        </section>
+      }
+
+  <div class="cards3">
+      <div class="panel">
+        <h3 class="sub-heading">Key Dates</h3>
+        <dl class="kv">
+          <div><dt>Started</dt><dd>{{ t.start | date: 'd MMM y' }}</dd></div>
+          <div><dt>Reviews open</dt><dd>{{ t.reviewOpens | date: 'd MMM y' }}</dd></div>
+          <div><dt>{{ p()!.extendedTo ? 'Extended to' : 'Ends' }}</dt><dd>{{ t.end | date: 'd MMM y' }}</dd></div>
+          @if (t.adj.days) { <div><dt>Leave adjustment</dt><dd>+{{ t.adj.days }} days</dd></div> }
+        </dl>
+        @if (t.adj.days) { <p class="small">Approved {{ t.adj.items[0].type.toLowerCase() }} moved your end date later.</p> }
+      </div>
+
+      <div class="panel">
+        <h3 class="sub-heading">Reviews</h3>
+        <ul class="rv">
+          <li [class.done]="p()!.employeeReviewOn"><i class="fa-solid" [class.fa-circle-check]="p()!.employeeReviewOn" [class.fa-circle]="!p()!.employeeReviewOn"></i>
+            <div><b>Your self review</b><span>{{ p()!.employeeReviewOn ? 'Submitted ' + (p()!.employeeReviewOn | date: 'd MMM') : 'Not submitted' }}</span></div>
+            @if (p()!.employeeReviewOn) { <a [routerLink]="['/probation/review/self', e().code]">View</a> }</li>
+          <li [class.done]="p()!.rmReviewOn"><i class="fa-solid" [class.fa-circle-check]="p()!.rmReviewOn" [class.fa-circle]="!p()!.rmReviewOn"></i>
+            <div><b>Manager's review</b><span>{{ p()!.rmReviewOn ? 'Submitted · shared after HR decides' : 'Not submitted yet' }}</span></div></li>
+          <li [class.done]="decided()"><i class="fa-solid" [class.fa-circle-check]="decided()" [class.fa-circle]="!decided()"></i>
+            <div><b>Outcome</b><span>{{ decided() ? p()!.outcome : 'Pending' }}</span></div></li>
+        </ul>
+        @if (decided()) { <a class="letter" routerLink="/probation/letters"><i class="fa-regular fa-file-lines"></i>{{ p()!.outcome === 'Confirmed' ? 'Confirmation' : 'Termination' }} letter</a> }
+      </div>
+
+      <div class="panel">
+        <h3 class="sub-heading">Questions?</h3>
+        <div class="contact"><span class="av"><i class="fa-solid fa-user-tie"></i></span><div><b>{{ e().manager || 'Not assigned' }}</b><span>Your reporting manager</span></div></div>
+        <div class="contact"><span class="av hr"><i class="fa-solid fa-users"></i></span><div><b>HR Team</b><span>hr&#64;harbourandhills.com</span></div></div>
+      </div>
+      </div>
+} @else {
+  <div class="panel empty"><i class="fa-regular fa-face-smile"></i><b>You're not on probation</b><span>Nothing to show here.</span></div>
+}

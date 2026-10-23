@@ -1,0 +1,68 @@
+<div class="page-head">
+  <div>
+    <h2 class="page-main-heading">Generate Payslips</h2>
+    <p class="sub">{{ doneCount() }} of {{ rows().length }} generated for {{ month() + '-01' | date: 'MMMM y' }}</p>
+  </div>
+  <div class="head-actions">
+    <select class="form-select month" aria-label="Payroll month" [ngModel]="month()" (ngModelChange)="month.set($event)">
+      @for (m of months; track m) { <option [value]="m">{{ m + '-01' | date: 'MMMM y' }}</option> }
+    </select>
+    <button class="btn btn-primary" (click)="confirmAll.set(true)" [disabled]="!pending().length">
+      <i class="fa-solid fa-file-invoice-dollar"></i>Generate All ({{ pending().length }})
+    </button>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="progress" role="progressbar" [attr.aria-valuenow]="doneCount()" aria-valuemin="0" [attr.aria-valuemax]="rows().length">
+    <span [style.width.%]="rows().length ? doneCount() / rows().length * 100 : 0"></span>
+  </div>
+  <div class="table-responsive">
+    <table class="table">
+      <thead><tr><th>Employee</th><th>Department</th><th class="text-end">Net Salary</th><th>Status</th><th class="text-end">Actions</th></tr></thead>
+      <tbody>
+        @for (r of rows(); track r.s.employee) {
+          <tr>
+            <td class="fw-medium nowrap">{{ r.s.employee }}</td>
+            <td class="muted nowrap">{{ dept(r.s.employee) }}</td>
+            <td class="num text-end" [class.dash]="!r.payable">{{ net(r.s) | number: '1.2-2' }}</td>
+            <td>
+              @if (r.done) { <span class="pill ok">Generated</span> }
+              @else if (!r.payable) { <span class="pill off" title="Set a salary in Monthly Payroll Summary first">No salary</span> }
+              @else { <span class="pill wait">Pending</span> }
+            </td>
+            <td class="text-end text-nowrap">
+              @if (r.done) {
+                <button class="btn-table t-blue" title="View payslip" [attr.aria-label]="'View payslip for ' + r.s.employee" (click)="slip.set(r.s.employee)"><i class="fa-regular fa-eye"></i></button>
+                <button class="btn-table t-green" title="Download payslip" [attr.aria-label]="'Download payslip for ' + r.s.employee" (click)="slip.set(r.s.employee)"><i class="fa-solid fa-download"></i></button>
+              } @else {
+                <button class="btn btn-primary btn-sm-row" [disabled]="!r.payable" (click)="one(r.s.employee)">Generate</button>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
+
+@if (slip(); as name) { <app-payslip [employee]="name" [month]="month()" (closed)="slip.set(null)" /> }
+
+@if (confirmAll()) {
+  <div class="backdrop" (click)="confirmAll.set(false)">
+    <div class="dialog" role="alertdialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <div class="dialog-head">
+        <h4>Generate Payslips</h4>
+        <button class="btn-close-popup" (click)="confirmAll.set(false)" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="dialog-body">
+        Generate <b>{{ pending().length }}</b> payslip{{ pending().length === 1 ? '' : 's' }} for <b>{{ month() + '-01' | date: 'MMMM y' }}</b>?
+        <p class="hint">Employees will be able to view and download them from their payslip history.</p>
+      </div>
+      <div class="dialog-foot">
+        <button class="btn btn-cancel" (click)="confirmAll.set(false)">Cancel</button>
+        <button class="btn btn-primary" (click)="all()">Generate</button>
+      </div>
+    </div>
+  </div>
+}

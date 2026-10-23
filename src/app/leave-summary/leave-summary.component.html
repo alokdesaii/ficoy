@@ -1,0 +1,46 @@
+<div class="page-head">
+  <h2 class="page-main-heading">My Leave Summary</h2>
+  <a routerLink="/myleaveapply" class="btn btn-accent"><i class="fa fa-plus"></i>Apply Leave</a>
+</div>
+
+<div class="stats">
+  <div class="stat blue">
+    <div class="head"><span>Total Leave Balance</span><span class="ico"><i class="fa-regular fa-calendar"></i></span></div>
+    <b>{{ s().total }}</b><small>days entitled this year</small>
+  </div>
+  <div class="stat green">
+    <div class="head"><span>Leave Taken (YTD)</span><span class="ico"><i class="fa-regular fa-calendar-check"></i></span></div>
+    <b>{{ s().taken }}</b><small>{{ s().pending ? s().pending + ' more pending approval' : 'nothing pending' }}</small>
+  </div>
+  <div class="stat khaki">
+    <div class="head"><span>Remaining Leaves</span><span class="ico"><i class="fa-regular fa-hourglass-half"></i></span></div>
+    <b>{{ s().remaining }}</b><small>after pending requests</small>
+  </div>
+</div>
+
+<div class="panel">
+  <h3 class="sub-heading">Balance by Leave Type</h3>
+  <div class="table-responsive">
+    <table class="table">
+      <thead><tr><th>Leave Type</th><th class="text-end">Total Entitled</th><th class="text-end">Used</th><th class="text-end">Pending</th><th class="text-end">Remaining</th><th class="bar-col">Usage</th></tr></thead>
+      <tbody>
+        @for (r of s().rows; track r.type) {
+          <tr>
+            <td class="fw-medium">{{ r.type }}</td>
+            <td class="num text-end">{{ r.entitled }}</td>
+            <td class="num text-end">{{ r.used }}</td>
+            <td class="num text-end" [class.dash]="!r.pending">{{ r.pending }}</td>
+            <td class="num text-end fw-semibold">{{ r.remaining }}</td>
+            <td class="bar-col">
+              <div class="bar" [attr.aria-label]="r.used + ' used, ' + r.pending + ' pending of ' + r.entitled" role="img">
+                <span class="used" [style.width.%]="pct(r.used, r.entitled)"></span>
+                <span class="pend" [style.width.%]="pct(r.pending, r.entitled)"></span>
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  <ul class="legend"><li><span class="sw used"></span>Used</li><li><span class="sw pend"></span>Pending</li><li><span class="sw rem"></span>Remaining</li></ul>
+</div>

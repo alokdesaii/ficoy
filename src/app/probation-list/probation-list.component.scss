@@ -1,0 +1,47 @@
+.sub { margin: 4px 0 0; color: var(--text-2); font-size: 13px; }
+
+.stage-cards { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+.sc { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 16px; border: 1px solid transparent; border-radius: 12px; text-align: left; transition: box-shadow 0.15s;
+  span { font-size: 12px; font-weight: 600; } b { color: var(--heading); font-size: 26px; font-variant-numeric: tabular-nums; line-height: 1.1; }
+  // full pastel blocks (tokens flip for dark mode)
+  &[data-s='In Probation'] { background: var(--brand-tint); span { color: var(--brand-text); } }
+  &[data-s='Review Due'] { background: var(--warn-bg); span { color: var(--warn); } }
+  &[data-s='Overdue'] { background: var(--bad-bg); span { color: var(--bad); } }
+  &[data-s='Extended · PIP'] { background: var(--purple-bg); span { color: var(--purple-ink); } }
+  &[data-s='Confirmed'] { background: var(--ok-bg); span { color: var(--ok); } }
+  &[data-s='Terminated'] { background: var(--khaki-bg); span { color: var(--khaki-ink); } }
+  &:hover { box-shadow: 0 4px 12px var(--shadow-md); } &.on { border-color: currentColor; box-shadow: 0 0 0 2px var(--brand); } }
+
+.filters { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; .form-select { width: 200px; } }
+.search { position: relative; width: 280px; i { position: absolute; top: 50%; left: 12px; transform: translateY(-50%); color: var(--muted); font-size: 14px; } .form-control { padding-left: 36px; } }
+.count { margin-left: auto; color: var(--text-2); font-size: 13px; }
+
+th, td { padding-left: 12px !important; padding-right: 12px !important; }
+.who { display: flex; align-items: center; gap: 12px; min-width: 200px;
+  .av { display: grid; place-items: center; flex: none; width: 34px; height: 34px; border-radius: 50%; background: var(--brand-tint); color: var(--brand-text); font-size: 12px; font-weight: 600; }
+  div { display: flex; flex-direction: column; } b { color: var(--heading); font-size: 13px; font-weight: 600; } span { color: var(--text-2); font-size: 12px; } }
+.nowrap { white-space: nowrap; } .dash { color: var(--muted); } .muted { color: var(--text-2); } .small { font-size: 12px; }
+.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.badge-mini { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 4px; background: var(--brand-tint); color: var(--brand-text); font-size: 11px; font-weight: 600; vertical-align: 1px;
+  &.warn { background: var(--purple-bg); color: var(--purple-ink); } }
+
+.prog-col { width: 180px; }
+.bar { height: 6px; border-radius: 999px; background: var(--bg); overflow: hidden;
+  span { display: block; height: 100%; background: var(--brand); }
+  &[data-s='Review Due'] span { background: var(--warn-fill); } &[data-s='Overdue'] span { background: var(--danger); } &[data-s='Extended · PIP'] span { background: #8a5cbc; } }
+.left { display: block; margin-top: 4px; color: var(--text-2); font-size: 12px; font-variant-numeric: tabular-nums; &.bad { color: var(--bad); font-weight: 600; } }
+
+.reviews { span { display: inline-flex; align-items: center; gap: 4px; margin-right: 10px; color: var(--muted); font-size: 12px; i { font-size: 11px; } &.done { color: var(--ok); } } }
+
+.pill { display: inline-flex; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 500; white-space: nowrap;
+  &[data-s='In Probation'] { background: var(--brand-tint); color: var(--brand-text); }
+  &[data-s='Review Due'] { background: var(--warn-bg); color: var(--warn); }
+  &[data-s='Overdue'] { background: var(--bad-bg); color: var(--bad); }
+  &[data-s='Extended · PIP'] { background: var(--purple-bg); color: var(--purple-ink); }
+  &[data-s='Confirmed'] { background: var(--ok-bg); color: var(--ok); }
+  &[data-s='Terminated'] { background: var(--bg); color: var(--text-2); } }
+.btn-table:disabled { opacity: 0.4; cursor: not-allowed; }
+.empty { padding: 48px 16px; text-align: center; color: var(--text-2); }
+
+@media (max-width: 1199px) { .stage-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 575px) { .stage-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } .search, .filters .form-select { width: 100%; } }

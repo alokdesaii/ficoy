@@ -1,0 +1,60 @@
+<div class="page-head">
+  <h2 class="page-main-heading">Employee Details</h2>
+  <a routerLink="/employeelist" class="btn btn-cancel"><i class="fa-solid fa-arrow-left"></i>Back</a>
+</div>
+
+@if (e) {
+  <div class="panel profile">
+    <div class="avatar-lg">{{ initials }}</div>
+    <div class="profile-main">
+      <div class="name-row">
+        <h3>{{ e.name }}</h3>
+        <span class="badge-status" [class.active]="e.active" [class.inactive]="!e.active">{{ e.active ? 'Active' : 'Inactive' }}</span>
+      </div>
+      <div class="chips">
+        <span class="chip"><i class="fa-solid fa-building"></i>{{ e.department }}</span>
+        <span class="chip"><i class="fa-solid fa-briefcase"></i>{{ e.designation }}</span>
+        <span class="chip"><i class="fa-regular fa-id-badge"></i>{{ e.code }}</span>
+      </div>
+      <div class="meta">
+        <span><i class="fa-regular fa-envelope"></i>{{ e.email }}</span>
+        <span><i class="fa-regular fa-calendar"></i>Joined {{ e.joined | date: 'd MMM y' }}</span>
+      </div>
+    </div>
+    <a [routerLink]="['/employeeedit', e.code]" class="btn btn-primary edit"><i class="fa-regular fa-pen-to-square"></i>Edit Employee</a>
+  </div>
+
+  <div class="cols">
+    <div class="panel">
+      <h3 class="sub-heading">Personal Information</h3>
+      <dl class="info">
+        <dt>Full Name</dt><dd>{{ e.name }}</dd>
+        <dt>Email Address</dt><dd>{{ e.email }}</dd>
+        <dt>Mobile</dt><dd>{{ e.mobile }}</dd>
+        <dt>Department</dt><dd>{{ e.department }}</dd>
+        <dt>Designation</dt><dd>{{ e.designation }}</dd>
+        <dt>Reporting Manager</dt><dd>{{ e.manager || '—' }}</dd>
+        <dt>Location</dt><dd>{{ e.location }}</dd>
+        <dt>Date of Joining</dt><dd>{{ e.joined | date: 'd MMM y' }}</dd>
+      </dl>
+    </div>
+
+    <div class="panel">
+      <h3 class="sub-heading">Uploaded Documents</h3>
+      <ul class="docs">
+        @for (d of e.documents; track d.type) {
+          <li>
+            <span class="doc-icon"><i class="fa-regular fa-file-lines"></i></span>
+            <div class="doc-text"><b>{{ d.type }}</b><span>{{ d.file }}</span></div>
+            <button class="btn-table t-blue" [attr.aria-label]="'View ' + d.type" title="View"><i class="fa-regular fa-eye"></i></button>
+            <button class="btn-table t-green" [attr.aria-label]="'Download ' + d.type" title="Download"><i class="fa-solid fa-download"></i></button>
+          </li>
+        } @empty {
+          <li class="empty">No documents uploaded</li>
+        }
+      </ul>
+    </div>
+  </div>
+} @else {
+  <div class="panel empty">Employee not found. <a routerLink="/employeelist">Back to list</a></div>
+}

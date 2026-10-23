@@ -1,0 +1,106 @@
+<div class="page-head">
+  <div>
+    <h2 class="page-main-heading">Monthly Payroll Summary</h2>
+    <p class="sub">{{ thisMonth + '-01' | date: 'MMMM y' }} · {{ rows().length }} employees</p>
+  </div>
+  <button class="btn btn-accent" (click)="export()"><i class="fa-solid fa-file-excel"></i>Export to Excel</button>
+</div>
+
+<div class="kpis">
+  <div class="kpi"><span>Total Earnings</span><b>HK$ {{ totals().earn | number: '1.2-2' }}</b></div>
+  <div class="kpi"><span>Total Deductions</span><b>HK$ {{ totals().ded | number: '1.2-2' }}</b></div>
+  <div class="kpi strong"><span>Net Payroll</span><b>HK$ {{ totals().earn - totals().ded | number: '1.2-2' }}</b></div>
+</div>
+
+<div class="panel mb">
+  <h3 class="sub-heading">Employee Payroll</h3>
+  <div class="table-responsive">
+    <table stack class="table">
+      <thead><tr><th>Employee</th><th>Department</th><th class="text-end">Earnings</th><th class="text-end">Deductions</th><th class="text-end">Net Salary</th><th class="text-end">Actions</th></tr></thead>
+      <tbody>
+        @for (s of rows(); track s.employee) {
+          <tr>
+            <td class="fw-medium nowrap">{{ s.employee }}</td>
+            <td class="muted nowrap">{{ dept(s.employee) }}</td>
+            <td class="num text-end">{{ total(s.earnings) | number: '1.2-2' }}</td>
+            <td class="num text-end" [class.dash]="!total(s.deductions)">{{ total(s.deductions) | number: '1.2-2' }}</td>
+            <td class="num text-end fw-semibold" [class.dash]="!net(s)">{{ net(s) | number: '1.2-2' }}</td>
+            <td class="text-end"><button class="btn-table t-green" title="Edit salary" [attr.aria-label]="'Edit salary for ' + s.employee" (click)="edit(s)"><i class="fa-regular fa-pen-to-square"></i></button></td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="toolbar">
+    <h3 class="sub-heading m-0">My Payslips</h3>
+    <select class="form-select year" aria-label="Year" [ngModel]="year()" (ngModelChange)="year.set(+$event)">
+      @for (y of years(); track y) { <option [value]="y">{{ y }}</option> }
+    </select>
+  </div>
+  <div class="table-responsive">
+    <table stack class="table">
+      <thead><tr><th>Month</th><th class="text-end">Total Earnings</th><th class="text-end">Total Deductions</th><th class="text-end">Net Salary</th><th class="text-end">Actions</th></tr></thead>
+      <tbody>
+        @if (mine(); as m) {
+          @for (mo of myMonths(); track mo) {
+            <tr>
+              <td class="fw-medium">{{ mo + '-01' | date: 'MMMM' }}</td>
+              <td class="num text-end">{{ total(m.earnings) | number: '1.2-2' }}</td>
+              <td class="num text-end">{{ total(m.deductions) | number: '1.2-2' }}</td>
+              <td class="num text-end fw-semibold">{{ net(m) | number: '1.2-2' }}</td>
+              <td class="text-end text-nowrap">
+                <button class="btn-table t-blue" title="View payslip" [attr.aria-label]="'View payslip for ' + mo" (click)="slip.set(mo)"><i class="fa-regular fa-eye"></i></button>
+                <button class="btn-table t-green" title="Download payslip" [attr.aria-label]="'Download payslip for ' + mo" (click)="slip.set(mo)"><i class="fa-solid fa-download"></i></button>
+              </td>
+            </tr>
+          } @empty { <tr><td colspan="5" class="empty">No payslips for {{ year() }}</td></tr> }
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
+
+@if (slip(); as mo) { <app-payslip [employee]="me" [month]="mo" (closed)="slip.set(null)" /> }
+
+@if (draft(); as d) {
+  <div class="backdrop" (click)="draft.set(null)">
+    <div class="dialog dialog-lg" role="dialog" aria-modal="true" aria-labelledby="salTitle" (click)="$event.stopPropagation()">
+      <div class="dialog-head">
+        <h4 id="salTitle">Update Salary · {{ d.employee }}</h4>
+        <button class="btn-close-popup" (click)="draft.set(null)" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="dialog-body">
+        <div class="cols">
+          @for (side of [{ k: 'earnings', t: 'Monthly Salary Breakup', a: 'Add earning' }, { k: 'deductions', t: 'Monthly Salary Deductions', a: 'Add deduction' }]; track side.k) {
+            @let list = side.k === 'earnings' ? d.earnings : d.deductions;
+            <section>
+              <h5 class="col-title">{{ side.t }}</h5>
+              @for (l of list; track $index; let i = $index) {
+                <div class="line">
+                  <input class="form-control" [(ngModel)]="l.label" placeholder="Component name" [attr.aria-label]="side.k + ' name'" [class.is-invalid]="tried && !l.label.trim()" />
+                  <div class="money"><span>HK$</span>
+                    <input class="form-control" type="number" min="0" step="0.01" [(ngModel)]="l.amount" [attr.aria-label]="l.label + ' amount'" [class.is-invalid]="tried && (l.amount === null || l.amount < 0)" /></div>
+                  <button class="btn-table t-red" (click)="removeLine(list, i)" [attr.aria-label]="'Remove ' + l.label" title="Remove"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+              }
+              <div class="col-foot">
+                <button class="add" (click)="addLine(list)"><i class="fa-solid fa-plus"></i>{{ side.a }}</button>
+                @if (side.k === 'deductions') { <button class="add" (click)="autoMpf(d)" title="5% of earnings, max HK$1,500"><i class="fa-solid fa-calculator"></i>Recalculate MPF</button> }
+              </div>
+              <div class="sum"><span>Total {{ side.k }}</span><b>HK$ {{ total(list) | number: '1.2-2' }}</b></div>
+            </section>
+          }
+        </div>
+        <div class="net"><span>Net Salary</span><b [class.neg]="net(d) < 0">HK$ {{ net(d) | number: '1.2-2' }}</b></div>
+        @if (tried && invalid(d)) { <p class="err"><i class="fa-solid fa-circle-exclamation"></i>Every line needs a name and a non-negative amount, and net salary can't be negative.</p> }
+      </div>
+      <div class="dialog-foot">
+        <button class="btn btn-cancel" (click)="draft.set(null)">Cancel</button>
+        <button class="btn btn-primary" (click)="save()">Update Salary</button>
+      </div>
+    </div>
+  </div>
+}

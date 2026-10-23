@@ -1,0 +1,117 @@
+<div class="page-head">
+  <div>
+    <h2 class="page-main-heading">Regularization Requests</h2>
+    @if (pending()) { <p class="sub">{{ pending() }} pending review</p> }
+  </div>
+</div>
+
+<div class="panel">
+  <div class="filters">
+    <div class="field">
+      <label class="form-label" for="st">Status</label>
+      <select id="st" class="form-select" [ngModel]="status()" (ngModelChange)="set(status, $event)">
+        <option value="">All statuses</option>
+        <option>Pending</option><option>Approved</option><option>Rejected</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table">
+      <thead><tr>
+        <th>Date</th><th>Employee Name</th><th>Requested Check-In</th><th>Requested Check-Out</th><th>Total Hours</th><th>Status</th><th class="text-end">Action</th>
+      </tr></thead>
+      <tbody>
+        @for (r of rows(); track r.id) {
+          <tr>
+            <td class="num">{{ r.date | date: 'dd MMM y' }}</td>
+            <td class="fw-medium nowrap">{{ r.employee }}</td>
+            <td class="num" [class.dash]="!r.checkIn">{{ r.checkIn ? ('2000-01-01T' + r.checkIn | date: 'hh:mm a') : '—' }}</td>
+            <td class="num" [class.dash]="!r.checkOut">{{ r.checkOut ? ('2000-01-01T' + r.checkOut | date: 'hh:mm a') : '—' }}</td>
+            <td class="num" [class.dash]="!gross(r)">{{ gross(r) || '—' }}</td>
+            <td><span class="pill" [attr.data-s]="r.status">{{ r.status }}</span></td>
+            <td class="text-end">
+              @if (r.status === 'Pending') {
+                <button class="btn btn-primary btn-sm-row" (click)="review(r)">Review</button>
+              } @else {
+                <button class="btn-table t-blue" title="View" [attr.aria-label]="'View request from ' + r.employee" (click)="review(r)"><i class="fa-regular fa-eye"></i></button>
+              }
+            </td>
+          </tr>
+        } @empty {
+          <tr><td colspan="7" class="empty">No regularization requests{{ status() ? ' with status ' + status() : '' }}</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pager">
+    <label class="size">Show
+      <select class="form-select" [ngModel]="size()" (ngModelChange)="set(size, +$event)">
+        @for (n of [10, 25, 50, 100]; track n) { <option [value]="n">{{ n }}</option> }
+      </select>
+      entries
+    </label>
+    <span>Showing {{ first() }}–{{ last() }} of {{ filtered().length }}</span>
+    <nav aria-label="Pagination">
+      <button (click)="go(page() - 1)" [disabled]="page() === 1" aria-label="Previous page"><i class="fa-solid fa-chevron-left"></i></button>
+      <span class="pg">Page {{ page() }} of {{ pages() }}</span>
+      <button (click)="go(page() + 1)" [disabled]="page() === pages()" aria-label="Next page"><i class="fa-solid fa-chevron-right"></i></button>
+    </nav>
+  </div>
+</div>
+
+@if (open(); as r) {
+  <div class="backdrop" (click)="open.set(null)">
+    <div class="dialog dialog-md" role="dialog" aria-modal="true" aria-labelledby="revTitle" (click)="$event.stopPropagation()">
+      <div class="dialog-head">
+        <h4 id="revTitle">Regularization Request</h4>
+        <span class="pill" [attr.data-s]="r.status">{{ r.status }}</span>
+        <button class="btn-close-popup" (click)="open.set(null)" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="dialog-body">
+        <dl class="facts">
+          <div><dt>Employee</dt><dd>{{ r.employee }}</dd></div>
+          <div><dt>Attendance Date</dt><dd>{{ r.date | date: 'EEE, d MMM y' }}</dd></div>
+        </dl>
+
+        <div class="compare">
+          <div class="col-h"></div><div class="col-h">Recorded</div><div class="col-h">Requested</div>
+          @let a = rowFor(r);
+          <div class="lbl">Clock-In</div>
+          <div>{{ a?.checkIn ? ('2000-01-01T' + a!.checkIn | date: 'hh:mm a') : '—' }}</div>
+          <div class="req">{{ r.checkIn ? ('2000-01-01T' + r.checkIn | date: 'hh:mm a') : '—' }}</div>
+          <div class="lbl">Clock-Out</div>
+          <div>{{ a?.checkOut ? ('2000-01-01T' + a!.checkOut | date: 'hh:mm a') : '—' }}</div>
+          <div class="req">{{ r.checkOut ? ('2000-01-01T' + r.checkOut | date: 'hh:mm a') : '—' }}</div>
+          <div class="lbl">Status</div>
+          <div>{{ a?.status === 'OnLeave' ? 'On Leave' : (a?.status ?? '—') }}{{ a?.punctuality ? ' · ' + a!.punctuality : '' }}</div>
+          <div class="req">{{ gross(r) ? 'Present · ' + gross(r) : '—' }}</div>
+        </div>
+
+        <div class="field">
+          <label class="form-label">Employee's Note</label>
+          <p class="note">{{ r.note }}</p>
+          @if (r.file) { <p class="file"><i class="fa-regular fa-file-lines"></i>{{ r.file }}</p> }
+        </div>
+
+        <div class="field">
+          <label class="form-label" for="cmt">Admin Comments <span class="opt">(optional)</span></label>
+          @if (r.status === 'Pending') {
+            <textarea id="cmt" class="form-control" rows="3" placeholder="Add a note for the employee" [(ngModel)]="comment"></textarea>
+          } @else {
+            <p class="note">{{ r.adminComment || 'No comments' }}</p>
+          }
+        </div>
+      </div>
+      <div class="dialog-foot">
+        @if (r.status === 'Pending') {
+          <button class="btn btn-reject" (click)="act('Rejected')"><i class="fa-solid fa-xmark"></i>Reject</button>
+          <button class="btn btn-primary" (click)="act('Approved')"><i class="fa-solid fa-check"></i>Approve</button>
+        } @else {
+          <button class="btn btn-cancel" (click)="open.set(null)">Close</button>
+        }
+      </div>
+    </div>
+  </div>
+}

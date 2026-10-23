@@ -1,0 +1,73 @@
+<div class="page-head">
+  <h2 class="page-main-heading">Leave History</h2>
+  <button class="btn btn-accent" (click)="export()" [disabled]="!filtered().length"><i class="fa-solid fa-file-excel"></i>Export to Excel</button>
+</div>
+
+<div class="panel">
+  <div class="filters">
+    <div class="field"><label class="form-label" for="q">Employee</label>
+      <div class="search"><i class="fa-solid fa-magnifying-glass"></i>
+        <input id="q" class="form-control" type="search" placeholder="Search by employee name" [ngModel]="search()" (ngModelChange)="set(search, $event)" /></div></div>
+    <div class="field"><label class="form-label" for="from">From</label>
+      <input id="from" class="form-control" type="date" [class.date-empty]="!from()" [max]="to() || null" [ngModel]="from()" (ngModelChange)="set(from, $event)" /></div>
+    <div class="field"><label class="form-label" for="to">To</label>
+      <input id="to" class="form-control" type="date" [class.date-empty]="!to()" [min]="from() || null" [ngModel]="to()" (ngModelChange)="set(to, $event)" /></div>
+    <div class="field"><label class="form-label" for="ty">Leave Type</label>
+      <select id="ty" class="form-select" [ngModel]="type()" (ngModelChange)="set(type, $event)">
+        <option value="">All leave types</option>
+        @for (t of types; track t) { <option>{{ t }}</option> }
+      </select></div>
+    <div class="field"><label class="form-label" for="st">Status</label>
+      <select id="st" class="form-select" [ngModel]="status()" (ngModelChange)="set(status, $event)">
+        <option value="">All statuses</option>
+        @for (s of statuses; track s) { <option>{{ s }}</option> }
+      </select></div>
+    @if (filtering) { <button class="btn btn-cancel" (click)="clear()">Clear</button> }
+  </div>
+
+  <div class="table-responsive">
+    <table class="table">
+      <thead><tr>
+        <th>Employee Name</th><th>Leave Type</th><th>Session</th><th>From</th><th>To</th><th class="text-end">Days</th><th>Status</th><th>Decision Maker</th><th>Comment</th><th>Requested On</th><th class="text-end">Action</th>
+      </tr></thead>
+      <tbody>
+        @for (l of rows(); track l.id) {
+          <tr>
+            <td class="fw-medium wrap">{{ l.employee }}</td>
+            <td class="wrap">{{ l.type }}</td>
+            <td class="nowrap muted">{{ l.session }}</td>
+            <td class="num">{{ l.from | date: 'dd MMM yy' }}</td>
+            <td class="num">{{ l.to | date: 'dd MMM yy' }}</td>
+            <td class="num text-end">{{ days(l) }}</td>
+            <td><span class="pill" [attr.data-s]="l.status">{{ l.status }}</span></td>
+            <td class="wrap" [class.dash]="!decidedBy(l)">{{ decidedBy(l) || '—' }}</td>
+            <td class="comment" [class.dash]="!l.adminComment" [title]="l.adminComment">{{ l.adminComment || '—' }}</td>
+            <td class="num">{{ l.requestedOn | date: 'dd MMM yy' }}</td>
+            <td class="text-end">
+              @if (l.document) {
+                <button class="btn-table t-green" title="Preview document" [attr.aria-label]="'Preview document for ' + l.employee" (click)="preview(l)"><i class="fa-regular fa-file-pdf"></i></button>
+              }
+            </td>
+          </tr>
+        } @empty {
+          <tr><td colspan="11" class="empty">No leave records match your filters</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pager">
+    <label class="size">Show
+      <select class="form-select" [ngModel]="size()" (ngModelChange)="set(size, +$event)">
+        @for (n of [10, 25, 50, 100]; track n) { <option [value]="n">{{ n }}</option> }
+      </select>
+      entries
+    </label>
+    <span>Showing {{ first() }}–{{ last() }} of {{ filtered().length }}</span>
+    <nav aria-label="Pagination">
+      <button (click)="go(page() - 1)" [disabled]="page() === 1" aria-label="Previous page"><i class="fa-solid fa-chevron-left"></i></button>
+      <span class="pg">Page {{ page() }} of {{ pages() }}</span>
+      <button (click)="go(page() + 1)" [disabled]="page() === pages()" aria-label="Next page"><i class="fa-solid fa-chevron-right"></i></button>
+    </nav>
+  </div>
+</div>

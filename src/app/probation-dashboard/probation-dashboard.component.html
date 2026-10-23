@@ -1,0 +1,73 @@
+<div class="page-head">
+  <div>
+    <h2 class="page-main-heading">Probation Dashboard</h2>
+    <p class="sub">{{ today | date: 'EEEE, d MMMM y' }}</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a routerLink="/probation/list" class="btn btn-cancel"><i class="fa-solid fa-list"></i>All probations</a>
+    <a routerLink="/probation/pip" class="btn btn-cancel"><i class="fa-solid fa-route"></i>PIPs</a>
+  </div>
+</div>
+
+<div class="kpis">
+  <a class="k blue" routerLink="/probation/list"><span>On probation</span><b>{{ kpi().onProbation }}</b><small>open probations</small></a>
+  <a class="k warn" routerLink="/probation/list"><span>Reviews due</span><b>{{ kpi().reviewDue }}</b><small>in the review window</small></a>
+  <a class="k bad" routerLink="/probation/list"><span>Overdue</span><b>{{ kpi().overdue }}</b><small>past end date</small></a>
+  <a class="k pip" routerLink="/probation/pip"><span>Active PIPs</span><b>{{ kpi().pips }}</b><small>extended probations</small></a>
+  <div class="k ok"><span>Confirmed in {{ year }}</span><b>{{ kpi().confirmed }}</b><small>of {{ kpi().decided }} decided</small></div>
+  <div class="k khaki"><span>Confirmation rate</span><b>{{ kpi().decided ? kpi().rate + '%' : '—' }}</b><small>this year</small></div>
+</div>
+
+<div class="grid">
+  <section class="panel">
+    <div class="sec-head"><h3 class="sub-heading m-0">Needs Action</h3><span class="count">{{ actions().length }}</span></div>
+    <ul class="actions">
+      @for (a of actions(); track a.kind + a.code) {
+        <li [attr.data-k]="a.kind">
+          <span class="ic"><i class="fa-solid" [class.fa-triangle-exclamation]="a.kind === 'overdue'" [class.fa-gavel]="a.kind === 'decide'" [class.fa-route]="a.kind === 'pip'" [class.fa-list-check]="a.kind === 'objectives'"></i></span>
+          <div class="tx"><b>{{ a.name }}</b><span>{{ a.detail }}</span></div>
+          <a class="btn btn-sm-row" [class.btn-primary]="a.kind !== 'overdue'" [class.btn-cancel]="a.kind === 'overdue'" [routerLink]="a.link">{{ a.cta }}</a>
+        </li>
+      } @empty { <li class="none"><i class="fa-regular fa-circle-check"></i>Nothing needs your attention</li> }
+    </ul>
+  </section>
+
+  <section class="panel">
+    <div class="sec-head"><h3 class="sub-heading m-0">Ending in 30 Days</h3><span class="count">{{ endingSoon().length }}</span></div>
+    <ul class="ending">
+      @for (r of endingSoon(); track r.e.code) {
+        <li>
+          <span class="av">{{ initials(r.e.name) }}</span>
+          <div class="tx"><a [routerLink]="['/probation/view', r.e.code]"><b>{{ r.e.name }}</b></a><span>Ends {{ r.t.end | date: 'd MMM' }} · RM {{ r.e.manager || '—' }}</span></div>
+          <span class="rv"><i class="fa-solid" [class.fa-circle-check]="r.p.employeeReviewOn" [class.fa-circle]="!r.p.employeeReviewOn" [class.on]="r.p.employeeReviewOn"></i>Self
+            <i class="fa-solid" [class.fa-circle-check]="r.p.rmReviewOn" [class.fa-circle]="!r.p.rmReviewOn" [class.on]="r.p.rmReviewOn"></i>RM</span>
+          <span class="dl" [class.soon]="r.t.daysLeft <= 7">{{ r.t.daysLeft === 0 ? 'Today' : r.t.daysLeft + 'd' }}</span>
+        </li>
+      } @empty { <li class="none">No probations end in the next 30 days</li> }
+    </ul>
+  </section>
+
+  <section class="panel">
+    <h3 class="sub-heading">Outcomes in {{ year }}</h3>
+    @if (kpi().decided) {
+      <div class="stack" role="img" [attr.aria-label]="kpi().outcomes.Confirm + ' confirmed, ' + kpi().outcomes.Extend + ' extended, ' + kpi().outcomes.Terminate + ' terminated'">
+        <span class="ok" [style.width.%]="pct(kpi().outcomes.Confirm)"></span><span class="pip" [style.width.%]="pct(kpi().outcomes.Extend)"></span><span class="bad" [style.width.%]="pct(kpi().outcomes.Terminate)"></span>
+      </div>
+      <ul class="legend">
+        <li><i class="ok"></i>Confirmed<b>{{ kpi().outcomes.Confirm }}</b></li>
+        <li><i class="pip"></i>Extended<b>{{ kpi().outcomes.Extend }}</b></li>
+        <li><i class="bad"></i>Terminated<b>{{ kpi().outcomes.Terminate }}</b></li>
+      </ul>
+    } @else { <p class="muted">No decisions yet this year.</p> }
+  </section>
+
+  <section class="panel">
+    <h3 class="sub-heading">Coming Up</h3>
+    <ol class="up">
+      @for (m of upcoming(); track m.code + m.date + m.label) {
+        <li><span class="d"><b>{{ m.date | date: 'd' }}</b>{{ m.date | date: 'MMM' }}</span>
+          <div class="tx"><b>{{ m.label }}</b><a [routerLink]="['/probation/view', m.code]">{{ m.name }}</a></div></li>
+      } @empty { <li class="none">Nothing scheduled in the next 60 days</li> }
+    </ol>
+  </section>
+</div>

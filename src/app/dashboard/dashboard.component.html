@@ -1,0 +1,153 @@
+<h2 class="page-main-heading">Dashboard</h2>
+
+<div class="card-grid">
+  <div class="dcard bg-blue">
+    <div class="c-title">
+      <span>Clock In / Clock Out</span>
+      <a class="c-icon icon-blue" aria-label="Attendance history"><img src="assets/images/clock-icon.svg" alt="" /></a>
+    </div>
+    <div class="c-row">
+      <div>
+        <p class="c-sub text-blue">Current Time</p>
+        <p class="c-big">{{ now() | date: 'HH:mm:ss' }}</p>
+      </div>
+      <button class="btn btn-primary">Clock In</button>
+    </div>
+    <p class="c-foot"><b>0h:00m:00s</b> Since Last Login</p>
+  </div>
+
+  <div class="dcard bg-green">
+    <div class="c-title">
+      <span>Leave Summary</span>
+      <a class="c-icon icon-green" routerLink="/leavesummaryoverview" aria-label="Leave overview"><img src="assets/images/leave-icon.svg" alt="" /></a>
+    </div>
+    <div class="leave-box">
+      <div class="leave-cell"><p>Total</p><strong>{{ leave().total }}</strong></div>
+      <div class="leave-cell"><p>Taken</p><strong>{{ leave().taken }}</strong></div>
+      <div class="leave-cell active"><p>Remaining</p><strong>{{ leave().remaining }}</strong></div>
+    </div>
+  </div>
+
+  <div class="dcard bg-khaki">
+    <div class="c-title">
+      <span>Upcoming Birthdays</span>
+      <button class="c-icon icon-khaki" (click)="modal.set('birthdays')" aria-label="View birthdays"><img src="assets/images/birthday-icon.svg" alt="" /></button>
+    </div>
+    @if (birthdays.length) {
+      <p class="c-mid">{{ birthdays[0].name }}</p>
+    } @else {
+      <p class="c-empty">No upcoming birthdays</p>
+    }
+    <button class="c-link text-khaki" (click)="modal.set('birthdays')">View All</button>
+  </div>
+
+  <div class="dcard bg-purple">
+    <div class="c-title">
+      <span>Upcoming Holiday</span>
+      <button class="c-icon icon-purple" (click)="modal.set('holidays')" aria-label="View holidays"><img src="assets/images/hoiday-icon.svg" alt="" /></button>
+    </div>
+    @if (nextHoliday(); as nextHoliday) {
+      <p class="c-sub text-purple">{{ nextHoliday.name }}</p>
+      <p class="c-mid">{{ nextHoliday.date | date: 'EEE, d MMMM, y' }}</p>
+    }
+    <button class="c-link text-purple" (click)="modal.set('holidays')">View All</button>
+  </div>
+
+  <div class="dcard bg-sand">
+    <div class="c-title">
+      <span>On Leave Today</span>
+      <button class="c-icon icon-sand" (click)="modal.set('onLeave')" aria-label="View employees on leave"><img src="assets/images/calender-list-icn.svg" alt="" /></button>
+    </div>
+    <ul class="person-list">
+      @for (p of onLeave; track p) {
+        <li><img src="assets/images/default-profile-picture.png" alt="" />{{ p }}</li>
+      } @empty {
+        <li class="c-empty">No one is on leave today</li>
+      }
+    </ul>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-head">
+    <h3>Company Policies</h3>
+    <button class="btn btn-primary" (click)="modal.set('policy')"><i class="fa-solid fa-plus me-2"></i>Add Policy</button>
+  </div>
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr><th>Policy Name</th><th>Type</th><th class="text-center">Download</th><th>Effective From</th><th class="text-center">Action</th></tr>
+      </thead>
+      <tbody>
+        @for (p of policies; track $index) {
+          <tr>
+            <td>{{ p.name }}</td><td>{{ p.type }}</td>
+            <td class="text-center"><button class="btn-table t-blue" aria-label="Download"><i class="fa-solid fa-download"></i></button></td>
+            <td>{{ p.effectiveFrom }}</td>
+            <td class="text-center"><button class="btn-table t-red" (click)="removePolicy($index)" aria-label="Delete"><i class="fa-regular fa-trash-can"></i></button></td>
+          </tr>
+        } @empty {
+          <tr><td colspan="5" class="text-center text-muted py-4">No policies added yet</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
+
+@if (modal()) {
+  <div class="backdrop" (click)="modal.set(null)">
+    <div class="dialog" [class.dialog-lg]="modal() === 'holidays'" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+      <div class="dialog-head">
+        @switch (modal()) {
+          @case ('policy') { <h4>Add Policy</h4> }
+          @case ('birthdays') { <h4><i class="fa-solid fa-cake-candles me-2"></i>Birthdays</h4> }
+          @case ('holidays') { <h4>Upcoming Holidays <span class="year-nav"><i class="fa-solid fa-angle-left"></i>{{ year }}<i class="fa-solid fa-angle-right"></i></span></h4> }
+          @case ('onLeave') { <h4>On Leave Today</h4> }
+        }
+        <button class="btn-close-popup" (click)="modal.set(null)" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="dialog-body">
+        @switch (modal()) {
+          @case ('policy') {
+            <div class="field"><label class="form-label">Policy Name</label><input class="form-control" [(ngModel)]="newPolicy.name" /></div>
+            <div class="field"><label class="form-label">Policy Type</label><input class="form-control" [(ngModel)]="newPolicy.type" /></div>
+            <div class="field"><label class="form-label">Effective From</label><input class="form-control" type="date" [(ngModel)]="newPolicy.effectiveFrom" /></div>
+            <div class="field mb-0"><label class="form-label">Upload File</label><input class="form-control" type="file" /></div>
+          }
+          @case ('birthdays') {
+            <table class="table mb-0">
+              <thead><tr><th>Birth Date</th><th>Name</th></tr></thead>
+              <tbody>
+                @for (b of birthdays; track b.name) { <tr><td>{{ b.date }}</td><td>{{ b.name }}</td></tr> }
+                @empty { <tr><td colspan="2" class="text-center text-muted py-4">No upcoming birthdays</td></tr> }
+              </tbody>
+            </table>
+          }
+          @case ('holidays') {
+            <div class="holiday-list">
+              @for (h of holidays(); track h.name) {
+                <div class="holiday" [class.past]="isPast(h.date)">
+                  <div class="date-box"><small>{{ h.date | date: 'MMM' }}</small><strong>{{ h.date | date: 'dd' }}</strong></div>
+                  <div><div class="fw-semibold">{{ h.name }}</div><div class="text-muted small">Public Holidays</div></div>
+                </div>
+              }
+            </div>
+          }
+          @case ('onLeave') {
+            <ul class="person-list">@for (p of onLeave; track p) { <li><img src="assets/images/default-profile-picture.png" alt="" />{{ p }}</li> }</ul>
+          }
+        }
+      </div>
+
+      <div class="dialog-foot">
+        @if (modal() === 'policy') {
+          <button class="btn btn-cancel" (click)="modal.set(null)">Cancel</button>
+          <button class="btn btn-primary" [disabled]="!newPolicy.name || !newPolicy.type || !newPolicy.effectiveFrom" (click)="addPolicy()">Save</button>
+        } @else {
+          <button class="btn btn-cancel" (click)="modal.set(null)">Close</button>
+        }
+      </div>
+    </div>
+  </div>
+}

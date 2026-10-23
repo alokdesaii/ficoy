@@ -1,0 +1,105 @@
+// 8px spacing scale; type scale 12 / 14 / 24 / 72
+.login-bg {
+  position: relative;
+  min-height: 100vh;
+  background: var(--sidebar-bg);
+  overflow: hidden;
+}
+
+.logo-top {
+  position: absolute;
+  top: 32px;
+  left: 64px;
+  height: 28px;
+}
+
+.login-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 48px;
+  min-height: 100vh;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 96px 64px;
+}
+
+.login-text h1 {
+  color: #fff;
+  font-size: 72px;
+  font-weight: 400;
+  line-height: 1.1;
+  margin: 0;
+  span { font-weight: 700; }
+}
+
+.people-img {
+  position: absolute;
+  bottom: 0;
+  left: 64px;
+  height: 160px;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 424px;
+  padding: 40px;
+  background: var(--surface);
+  border: 1px solid var(--divider);
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+
+  h4 { color: var(--heading); font-size: 24px; font-weight: 600; margin: 0 0 24px; }
+}
+
+.field { margin-bottom: 16px; }
+
+.form-label {
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.input-wrap { position: relative; }
+
+.form-control {
+  height: 40px;
+  padding: 0 40px 0 12px;
+  font-size: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  &::placeholder { color: var(--muted); }
+  &:focus { border-color: var(--brand); box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 15%, transparent); }
+}
+
+.input-icon {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  color: var(--brand-text);
+  font-size: 14px;
+}
+.icon-btn { background: none; border: 0; padding: 0; line-height: 1; cursor: pointer; }
+
+.btn-primary {
+  height: 40px;
+  margin-top: 8px;
+  font-weight: 500;
+  border-radius: 8px;
+  background: var(--brand);
+  border-color: var(--brand);
+  &:disabled { background: var(--bg); border-color: var(--bg); color: var(--muted); opacity: 1; }
+}
+
+.forgotpswd { color: var(--brand-text); font-size: 12px; text-decoration: none; &:hover { text-decoration: underline; } }
+
+@media (max-width: 767px) {
+  .logo-top { left: 24px; top: 24px; }
+  .login-container { flex-direction: column; justify-content: center; padding: 96px 16px 32px; gap: 32px; }
+  .login-text h1 { font-size: 40px; text-align: center; }
+  .login-card { padding: 24px; }
+}
+
+.otp-input { padding-right: 12px; letter-spacing: 0.3em; font-variant-numeric: tabular-nums; &::placeholder { letter-spacing: normal; } }

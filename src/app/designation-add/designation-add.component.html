@@ -1,0 +1,30 @@
+<div class="page-head">
+  <h2 class="page-main-heading">{{ editing ? 'Edit Designation' : 'Add Designation' }}</h2>
+  <a routerLink="/designation-list" class="btn btn-cancel"><i class="fa-solid fa-arrow-left"></i>Back</a>
+</div>
+
+<form class="panel" [formGroup]="form" (ngSubmit)="save()" novalidate>
+  <h3 class="sub-heading">Designation Details</h3>
+  <div class="form-grid">
+    <div class="field">
+      <label class="form-label" for="department">Department<span class="req">*</span></label>
+      <select id="department" class="form-select" formControlName="department" [class.is-invalid]="bad('department')">
+        <option value="">Select department</option>
+        @for (d of departments(); track d.id) { <option [value]="d.name">{{ d.name }}</option> }
+      </select>
+      @if (bad('department')) { <div class="invalid-feedback d-block">Department is required</div> }
+    </div>
+    <div class="field">
+      <label class="form-label" for="name">Designation Name<span class="req">*</span></label>
+      <input id="name" class="form-control" formControlName="name" placeholder="Enter designation name" maxlength="60"
+             [class.is-invalid]="bad('name') || dup" />
+      @if (bad('name')) { <div class="invalid-feedback d-block">Designation name is required</div> }
+      @if (dup) { <div class="invalid-feedback d-block">This designation already exists in the department</div> }
+    </div>
+  </div>
+
+  <div class="form-actions">
+    <a routerLink="/designation-list" class="btn btn-cancel">Cancel</a>
+    <button type="submit" class="btn btn-primary">{{ editing ? 'Update Designation' : 'Save Designation' }}</button>
+  </div>
+</form>

@@ -1,0 +1,47 @@
+.sub { margin: 4px 0 0; color: var(--text-2); font-size: 13px; }
+.filters { display: grid; grid-template-columns: 280px 180px 180px 200px auto; gap: 16px; align-items: end; margin-bottom: 24px; }
+.search { position: relative; i { position: absolute; top: 50%; left: 12px; transform: translateY(-50%); color: var(--muted); font-size: 14px; } .form-control { padding-left: 36px; } }
+
+.nowrap { white-space: nowrap; }
+.muted { color: var(--text-2); }
+.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.empty { padding: 48px 16px; text-align: center; color: var(--text-2); }
+.btn-sm-row { height: 32px; padding: 0 12px; font-size: 12px; vertical-align: middle; margin-left: 8px; }
+
+.pill {
+  display: inline-flex; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 500; white-space: nowrap;
+  &[data-s='Pending'], &[data-s='Cancel Requested'] { background: var(--warn-bg); color: var(--warn); }
+  &[data-s='Approved'], &[data-s='Cancel Rejected'] { background: var(--ok-bg); color: var(--ok); }
+  &[data-s='Rejected'] { background: var(--bad-bg); color: var(--bad); }
+  &[data-s='Cancel Approved'], &[data-s='Pending Cancelled'] { background: var(--bg); color: var(--text-2); }
+}
+
+.pager {
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 16px; color: var(--text-2); font-size: 13px;
+  .size { display: flex; align-items: center; gap: 8px; margin-right: auto; .form-select { width: 76px; height: 32px; padding-top: 0; padding-bottom: 0; font-size: 13px; } }
+  nav { display: flex; align-items: center; gap: 8px; }
+  .pg { min-width: 88px; text-align: center; font-variant-numeric: tabular-nums; }
+  button { width: 32px; height: 32px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink);
+    &:hover:not(:disabled) { border-color: var(--brand); } &:disabled { opacity: 0.4; } i { font-size: 11px; } }
+}
+
+// details modal
+.dialog-md { max-width: 600px; }
+.dialog-head { gap: 12px; h4 { margin-right: auto; } }
+.banner { display: flex; gap: 8px; margin: 0 0 16px; padding: 12px; border-radius: 8px; background: var(--warn-bg); color: var(--warn); font-size: 13px; i { margin-top: 2px; } }
+.facts {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px 24px; margin: 0 0 16px;
+  .span-2 { grid-column: span 2; }
+  dt { margin-bottom: 4px; color: var(--text-2); font-size: 12px; font-weight: 500; }
+  dd { margin: 0; color: var(--heading); font-size: 14px; font-weight: 600; &.plain { font-weight: 400; } }
+}
+.link { display: inline-flex; align-items: center; gap: 8px; padding: 0; border: 0; background: none; color: var(--brand-text); font-weight: 500; &:hover { text-decoration: underline; } }
+.note { margin: 0; padding: 12px; border-radius: 8px; background: var(--bg); font-size: 13px; }
+.opt { color: var(--muted); font-weight: 400; }
+textarea.form-control { height: auto; resize: vertical; }
+.hist-title { margin: 24px 0 8px; color: var(--heading); font-size: 13px; font-weight: 600; }
+.hist { margin: 0; padding: 0; list-style: none; li { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-top: 1px solid var(--divider); font-size: 13px; font-variant-numeric: tabular-nums; } .by { margin-left: auto; color: var(--text-2); } }
+.btn-reject { background: var(--surface); border: 1px solid var(--bad-line); color: var(--bad); &:hover { background: var(--bad-bg); color: var(--bad); } }
+
+@media (max-width: 1199px) { .filters { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+th, td { padding-left: 12px !important; padding-right: 12px !important; }

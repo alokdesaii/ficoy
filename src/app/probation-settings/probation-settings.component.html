@@ -1,0 +1,187 @@
+<div class="page-head">
+  <div>
+    <h2 class="page-main-heading">Probation Settings</h2>
+    <p class="sub">Rules every probation follows. Changes apply to probations started after you save.</p>
+  </div>
+  <button class="btn btn-cancel" (click)="restoreDefaults()"><i class="fa-solid fa-rotate-left"></i>Restore defaults</button>
+</div>
+
+<div class="layout">
+  <nav class="panel side" aria-label="Settings sections">
+    @for (t of tabs; track t.k) {
+      <button [class.on]="tab() === t.k" (click)="tab.set(t.k)" [attr.aria-current]="tab() === t.k ? 'page' : null"><i [class]="t.i"></i>{{ t.t }}</button>
+    }
+  </nav>
+
+  <div class="content">
+    <div class="panel">
+      @switch (tab()) {
+        @case ('general') {
+          <h3 class="sub-heading">Duration</h3>
+          <p class="help">Probation length by employment type. Set 0 to exempt a type from probation.</p>
+          <div class="rows">
+            @for (t of types; track t) {
+              <div class="row-line">
+                <label [for]="'dur-' + t">{{ t }}</label>
+                <div class="unit"><input [id]="'dur-' + t" class="form-control" type="number" min="0" max="12" [(ngModel)]="d().durations[t]" (ngModelChange)="touch()" /><span>months</span></div>
+                @if (!d().durations[t]) { <span class="tag">Exempt</span> }
+              </div>
+            }
+          </div>
+
+          <h3 class="sub-heading mt">Start</h3>
+          <div class="radios">
+            <label><input type="radio" class="form-check-input" name="start" value="joining" [(ngModel)]="d().startOn" (ngModelChange)="touch()" />On the joining date</label>
+            <label><input type="radio" class="form-check-input" name="start" value="onboarding" [(ngModel)]="d().startOn" (ngModelChange)="touch()" />When onboarding is completed</label>
+          </div>
+
+          <h3 class="sub-heading mt">End date</h3>
+          <p class="help">The joining date counts as day 1, so a 3-month probation from 15 Jan ends on 14 Apr. If the month is shorter, it ends on that month's last day. Weekends and holidays don't move the end date.</p>
+        }
+
+        @case ('reviews') {
+          <h3 class="sub-heading">Review window</h3>
+          <div class="rows">
+            <div class="row-line"><label for="open">Review opens</label>
+              <div class="unit"><input id="open" class="form-control" type="number" min="1" [(ngModel)]="d().reviewOpensDaysBefore" (ngModelChange)="touch()" /><span>days before end</span></div></div>
+            <div class="row-line check"><label><input type="checkbox" class="form-check-input" [(ngModel)]="d().blockDecisionUntilBothReviews" (ngModelChange)="touch()" />HR can only decide once both the employee and RM reviews are submitted</label></div>
+          </div>
+
+          <h3 class="sub-heading mt">Rating scale</h3>
+          <ol class="scale">
+            @for (s of d().scale; track $index; let i = $index) {
+              <li><span class="n">{{ i + 1 }}</span><input class="form-control" [(ngModel)]="d().scale[i]" (ngModelChange)="touch()" [attr.aria-label]="'Label for rating ' + (i + 1)" /></li>
+            }
+          </ol>
+          <div class="row-line"><label for="cmt">Comment required at</label>
+            <div class="unit"><input id="cmt" class="form-control" type="number" min="1" [max]="d().scale.length" [(ngModel)]="d().commentRequiredAtOrBelow" (ngModelChange)="touch()" /><span>or below</span></div></div>
+
+          <h3 class="sub-heading mt">Criteria</h3>
+          <p class="help">Both the employee and the RM rate each criterion.</p>
+          <ul class="crit">
+            @for (c of d().criteria; track c; let i = $index; let first = $first; let last = $last) {
+              <li><span class="grip">{{ i + 1 }}</span><span class="name">{{ c }}</span>
+                <button class="icon" (click)="moveCriterion(i, -1)" [disabled]="first" aria-label="Move up"><i class="fa-solid fa-arrow-up"></i></button>
+                <button class="icon" (click)="moveCriterion(i, 1)" [disabled]="last" aria-label="Move down"><i class="fa-solid fa-arrow-down"></i></button>
+                <button class="icon bad" (click)="removeCriterion(i)" [attr.aria-label]="'Remove ' + c"><i class="fa-solid fa-xmark"></i></button>
+              </li>
+            }
+          </ul>
+          <div class="adder"><input class="form-control" placeholder="Add a criterion" [(ngModel)]="newCriterion" (keydown.enter)="addCriterion()" aria-label="New criterion" />
+            <button class="btn btn-cancel" (click)="addCriterion()" [disabled]="!newCriterion.trim()"><i class="fa-solid fa-plus"></i>Add</button></div>
+
+          <h3 class="sub-heading mt">Recommended outcome</h3>
+          <p class="help">Based on the RM's average rating. HR sees the recommendation when deciding.</p>
+          <div class="bands">
+            <div class="band ok"><b>Confirm</b><span>average ≥</span><input class="form-control" type="number" step="0.1" min="1" [max]="d().scale.length" [(ngModel)]="d().confirmAtOrAbove" (ngModelChange)="touch()" aria-label="Confirm threshold" /></div>
+            <div class="band warn"><b>Extend + PIP</b><span>average ≥</span><input class="form-control" type="number" step="0.1" min="1" [max]="d().scale.length" [(ngModel)]="d().extendAtOrAbove" (ngModelChange)="touch()" aria-label="Extend threshold" /></div>
+            <div class="band bad"><b>Terminate</b><span>below {{ d().extendAtOrAbove }}</span></div>
+          </div>
+          <div class="row-line check"><label><input type="checkbox" class="form-check-input" [(ngModel)]="d().hrCanOverride" (ngModelChange)="touch()" />HR can override the recommendation (a reason is required)</label></div>
+        }
+
+        @case ('pip') {
+          <h3 class="sub-heading">Extension</h3>
+          <div class="rows">
+            <div class="row-line"><label for="mx">Extensions allowed</label>
+              <div class="unit"><input id="mx" class="form-control" type="number" min="0" max="3" [(ngModel)]="d().maxExtensions" (ngModelChange)="touch()" /><span>per employee</span></div></div>
+            <div class="row-line"><label for="mxm">Longest extension</label>
+              <div class="unit"><input id="mxm" class="form-control" type="number" min="1" max="6" [(ngModel)]="d().maxExtensionMonths" (ngModelChange)="touch()" /><span>months</span></div></div>
+            <div class="row-line check"><label><input type="checkbox" class="form-check-input" [(ngModel)]="d().pipRequiredOnExtension" (ngModelChange)="touch()" />Every extension starts a Performance Improvement Plan</label></div>
+          </div>
+
+          <h3 class="sub-heading mt">Performance Improvement Plan</h3>
+          <div class="rows">
+            <div class="row-line"><label for="pd">PIP length</label>
+              <div class="unit"><input id="pd" class="form-control" type="number" min="14" [(ngModel)]="d().pipDurationDays" (ngModelChange)="touch()" /><span>days</span></div></div>
+            <div class="row-line"><label for="pc">Checkpoint every</label>
+              <div class="unit"><input id="pc" class="form-control" type="number" min="7" [(ngModel)]="d().pipCheckpointEveryDays" (ngModelChange)="touch()" /><span>days</span></div></div>
+          </div>
+          <p class="help">The RM sets the PIP objectives and HR approves them. Each checkpoint uses the same two-way review as probation, and the PIP ends in Confirm or Terminate.</p>
+        }
+
+        @case ('leave') {
+          <h3 class="sub-heading">Leave that extends probation</h3>
+          <p class="help">Approved leave of these types pushes the end date and every reminder later. Cancelled leave reverses the change.</p>
+          <div class="chips">
+            @for (t of leaveTypes; track t) {
+              <label class="chip" [class.on]="d().leaveTypes.includes(t)"><input type="checkbox" class="visually-hidden" [checked]="d().leaveTypes.includes(t)" (change)="toggleLeave(t)" />
+                <i class="fa-solid" [class.fa-check]="d().leaveTypes.includes(t)" [class.fa-plus]="!d().leaveTypes.includes(t)"></i>{{ t }}</label>
+            }
+          </div>
+          <div class="rows mt-sm">
+            <div class="row-line"><label for="lm">Only when at least</label>
+              <div class="unit"><input id="lm" class="form-control" type="number" min="1" [(ngModel)]="d().leaveMinConsecutiveDays" (ngModelChange)="touch()" /><span>consecutive days</span></div></div>
+            <div class="row-line"><label>Extend by</label>
+              <div class="radios inline">
+                <label><input type="radio" class="form-check-input" name="basis" value="calendar" [(ngModel)]="d().leaveBasis" (ngModelChange)="touch()" />Calendar days</label>
+                <label><input type="radio" class="form-check-input" name="basis" value="working" [(ngModel)]="d().leaveBasis" (ngModelChange)="touch()" />Working days</label>
+              </div></div>
+          </div>
+        }
+
+        @case ('notify') {
+          <h3 class="sub-heading">Reminders</h3>
+          <p class="help">Days before the probation end date when reminders go out. Once the end date passes, HR gets an escalation every {{ d().escalateEveryDays }} day(s) until the reviews are in.</p>
+          <div class="pills">
+            @for (n of d().reminderDays; track n) { <span class="pill">{{ n }} days before<button (click)="removeReminder(n)" [attr.aria-label]="'Remove ' + n + ' day reminder'"><i class="fa-solid fa-xmark"></i></button></span> }
+            <span class="adder small"><input class="form-control" type="number" min="0" placeholder="Days" [(ngModel)]="newReminder" (keydown.enter)="addReminder()" aria-label="New reminder days" />
+              <button class="btn btn-cancel" (click)="addReminder()" [disabled]="newReminder === null"><i class="fa-solid fa-plus"></i></button></span>
+          </div>
+          <div class="row-line mt-sm"><label for="esc">Escalate every</label>
+            <div class="unit"><input id="esc" class="form-control" type="number" min="1" [(ngModel)]="d().escalateEveryDays" (ngModelChange)="touch()" /><span>days when overdue</span></div></div>
+
+          <h3 class="sub-heading mt">Who gets notified</h3>
+          <div class="channels">
+            <label><input type="checkbox" class="form-check-input" [(ngModel)]="d().channels.inApp" (ngModelChange)="touch()" />In-app</label>
+            <label><input type="checkbox" class="form-check-input" [(ngModel)]="d().channels.email" (ngModelChange)="touch()" />Email</label>
+          </div>
+          <div class="table-responsive">
+            <table class="table matrix">
+              <thead><tr><th>Event</th>@for (r of roles; track r) { <th class="text-center">{{ r }}</th> }</tr></thead>
+              <tbody>
+                @for (e of events; track e.key) {
+                  <tr><td class="fw-medium">{{ e.label }}</td>
+                    @for (r of roles; track r) {
+                      <td class="text-center"><input type="checkbox" class="form-check-input" [checked]="has(e.key, r)" (change)="toggleRecipient(e.key, r)" [attr.aria-label]="r + ' notified when ' + e.label" /></td>
+                    }
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      }
+    </div>
+
+    <div class="savebar" [class.show]="dirty() || saved()">
+      @if (errors().length) {
+        <ul class="errs">@for (e of errors(); track e) { <li><i class="fa-solid fa-circle-exclamation"></i>{{ e }}</li> }</ul>
+      } @else if (saved() && !dirty()) {
+        <span class="okmsg"><i class="fa-solid fa-circle-check"></i>Settings saved</span>
+      } @else {
+        <span class="muted">You have unsaved changes</span>
+      }
+      <div class="btns">
+        <button class="btn btn-cancel" (click)="discard()" [disabled]="!dirty()">Discard</button>
+        <button class="btn btn-primary" (click)="save()" [disabled]="!dirty() || errors().length > 0">Save Settings</button>
+      </div>
+    </div>
+  </div>
+
+  <aside class="panel example">
+    <h3 class="sub-heading">How it plays out</h3>
+    @if (example(); as x) {
+      <p class="help">A Full Time employee joining on <b>{{ sampleJoin | date: 'd MMM y' }}</b>:</p>
+      <ol class="tl">
+        <li><span class="dot"></span><b>{{ sampleJoin | date: 'd MMM' }}</b>Probation starts</li>
+        @for (r of x.reminders; track r; let i = $index) { <li><span class="dot soft"></span><b>{{ r | date: 'd MMM' }}</b>Reminder {{ i + 1 }}{{ r === x.reviewOpens ? ' · reviews open' : '' }}</li> }
+        @if (!x.reminders.includes(x.reviewOpens)) { <li><span class="dot soft"></span><b>{{ x.reviewOpens | date: 'd MMM' }}</b>Reviews open</li> }
+        <li><span class="dot end"></span><b>{{ x.end | date: 'd MMM y' }}</b>Probation ends · HR decides</li>
+      </ol>
+      <p class="help">{{ d().leaveTypes.length ? d().leaveTypes.join(' or ') + ' of ' + d().leaveMinConsecutiveDays + '+ days moves these dates later.' : 'Leave never moves these dates.' }}</p>
+    } @else {
+      <p class="help">Full Time employees are exempt, so there's nothing to show.</p>
+    }
+  </aside>
+</div>

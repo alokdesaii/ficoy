@@ -1,0 +1,126 @@
+<div class="page-head">
+  <h2 class="page-main-heading">Attendance History</h2>
+  <button class="btn btn-accent" (click)="export()" [disabled]="!filtered().length"><i class="fa-solid fa-file-excel"></i>Export to Excel</button>
+</div>
+
+<div class="panel">
+  <div class="filters">
+    <div class="field"><label class="form-label" for="from">From</label>
+      <input id="from" class="form-control" type="date" [max]="to() || null" [class.date-empty]="!from()" [ngModel]="from()" (ngModelChange)="set(from, $event)" /></div>
+    <div class="field"><label class="form-label" for="to">To</label>
+      <input id="to" class="form-control" type="date" [min]="from() || null" [class.date-empty]="!to()" [ngModel]="to()" (ngModelChange)="set(to, $event)" /></div>
+    <div class="field"><label class="form-label" for="emp">Employee</label>
+      <select id="emp" class="form-select" [ngModel]="employee()" (ngModelChange)="set(employee, $event)">
+        <option value="">All employees</option>
+        @for (n of names(); track n) { <option [value]="n">{{ n }}</option> }
+      </select></div>
+    <div class="field"><label class="form-label" for="st">Status</label>
+      <select id="st" class="form-select" [ngModel]="status()" (ngModelChange)="set(status, $event)">
+        <option value="">All statuses</option>
+        @for (s of ['Present', 'Absent', 'Half Day', 'OnLeave']; track s) { <option [value]="s">{{ s === 'OnLeave' ? 'On Leave' : s }}</option> }
+      </select></div>
+    <div class="field"><label class="form-label" for="pu">Punctuality</label>
+      <select id="pu" class="form-select" [ngModel]="punctuality()" (ngModelChange)="set(punctuality, $event)">
+        <option value="">All</option>
+        <option value="OnTime">On Time</option><option value="Late">Late</option><option value="EarlyLeaving">Early Leaving</option>
+      </select></div>
+    @if (filtering) { <button class="btn btn-cancel" (click)="clear()">Clear</button> }
+  </div>
+
+  <div class="table-responsive">
+    <table stack class="table">
+      <thead><tr>
+        <th>Date</th><th>Employee Name</th><th>Check-In</th><th>Check-Out</th><th>Total Hours</th>
+        <th>Status</th><th>Punctuality</th><th>Remarks</th><th class="text-end">Action</th>
+      </tr></thead>
+      <tbody>
+        @for (r of rows(); track r.date + r.employee) {
+          <tr>
+            <td class="nowrap num">{{ r.date | date: 'dd MMM y' }}</td>
+            <td class="nowrap fw-medium">{{ r.employee }}</td>
+            <td class="num" [class.dash]="!r.checkIn">{{ r.checkIn ? ('2000-01-01T' + r.checkIn | date: 'hh:mm a') : '—' }}</td>
+            <td class="num" [class.dash]="!r.checkOut">{{ r.checkOut ? ('2000-01-01T' + r.checkOut | date: 'hh:mm a') : '—' }}</td>
+            <td class="num" [class.dash]="!hours(r)">{{ hours(r) || '—' }}</td>
+            <td><span class="pill" [attr.data-s]="r.status">{{ r.status === 'OnLeave' ? 'On Leave' : r.status }}</span></td>
+            <td>
+              @switch (r.punctuality) {
+                @case ('OnTime') { <span class="tag ok">On Time</span> }
+                @case ('Late') { <span class="tag warn">Late</span> }
+                @case ('EarlyLeaving') { <span class="tag warn">Early Leaving</span> }
+                @default { <span class="dash">—</span> }
+              }
+            </td>
+            <td class="remarks">{{ r.remarks || '—' }}</td>
+            <td class="text-end">
+              <button class="btn-table t-blue" [disabled]="r.status === 'OnLeave'"
+                      [title]="r.status === 'OnLeave' ? 'On leave — nothing to regularize' : 'Apply regularization'"
+                      [attr.aria-label]="'Apply regularization for ' + r.employee + ' on ' + r.date" (click)="open(r)">
+                <i class="fa-regular fa-clock"></i>
+              </button>
+            </td>
+          </tr>
+        } @empty {
+          <tr><td colspan="9" class="empty">No attendance records match your filters</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pager">
+    <label class="size">Show
+      <select class="form-select" [ngModel]="size()" (ngModelChange)="set(size, +$event)">
+        @for (n of [10, 25, 50, 100]; track n) { <option [value]="n">{{ n }}</option> }
+      </select>
+      entries
+    </label>
+    <span>Showing {{ first() }}–{{ last() }} of {{ filtered().length }}</span>
+    <nav aria-label="Pagination">
+      <button (click)="go(page() - 1)" [disabled]="page() === 1" aria-label="Previous page"><i class="fa-solid fa-chevron-left"></i></button>
+      <span class="pg">Page {{ page() }} of {{ pages() }}</span>
+      <button (click)="go(page() + 1)" [disabled]="page() === pages()" aria-label="Next page"><i class="fa-solid fa-chevron-right"></i></button>
+    </nav>
+  </div>
+</div>
+
+@if (reg(); as r) {
+  <div class="backdrop" (click)="reg.set(null)">
+    <div class="dialog dialog-md" role="dialog" aria-modal="true" aria-labelledby="regTitle" (click)="$event.stopPropagation()">
+      <div class="dialog-head">
+        <h4 id="regTitle">Apply Attendance Regularization</h4>
+        <span class="quota"><i class="fa-solid fa-circle-info"></i>{{ remaining() }} of 5 requests remaining</span>
+        <button class="btn-close-popup" (click)="reg.set(null)" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="dialog-body">
+        <p class="for">{{ r.employee }} · {{ r.remarks || r.status }}</p>
+        <div class="reg-grid">
+          <div class="field span-2"><label class="form-label" for="rd">Attendance Date<span class="req">*</span></label>
+            <input id="rd" class="form-control" type="date" [(ngModel)]="form.date" [class.is-invalid]="tried && !form.date" /></div>
+          <div class="field"><label class="form-label" for="ri">Actual Clock-In</label>
+            <input id="ri" class="form-control" type="time" [(ngModel)]="form.in" /></div>
+          <div class="field"><label class="form-label" for="ro">Actual Clock-Out</label>
+            <input id="ro" class="form-control" type="time" [(ngModel)]="form.out" [class.is-invalid]="tried && form.in && form.out && form.out <= form.in" />
+            @if (tried && form.in && form.out && form.out <= form.in) { <div class="invalid-feedback d-block">Clock-out must be after clock-in</div> }
+          </div>
+          <div class="field span-2"><label class="form-label" for="rn">Note / Remarks<span class="req">*</span></label>
+            <textarea id="rn" class="form-control" rows="3" placeholder="Explain why this attendance needs correcting" [(ngModel)]="form.note"
+                      [class.is-invalid]="tried && !form.note.trim()"></textarea>
+            @if (tried && !form.note.trim()) { <div class="invalid-feedback d-block">A note is required</div> }
+          </div>
+          <div class="field span-2"><label class="form-label">Supporting Document <span class="opt">(optional)</span></label>
+            <label class="drop">
+              <i class="fa-solid fa-cloud-arrow-up"></i>
+              <span>{{ form.file || 'Drag & drop or click to upload' }}</span>
+              <small>PDF, PNG, JPG up to 5MB</small>
+              <input type="file" hidden accept=".pdf,.png,.jpg,.jpeg" (change)="pick($any($event.target))" />
+            </label>
+          </div>
+        </div>
+        <p class="note"><i class="fa-solid fa-circle-info"></i>Regularization requests must be submitted by the 25th of every month, before the monthly payroll lock. Rejected requests will result in CL/LWP deductions.</p>
+      </div>
+      <div class="dialog-foot">
+        <button class="btn btn-cancel" (click)="reg.set(null)">Discard</button>
+        <button class="btn btn-primary" (click)="submit()" [disabled]="remaining() <= 0">Submit Request</button>
+      </div>
+    </div>
+  </div>
+}

@@ -1,0 +1,114 @@
+<ng-template #fieldTpl let-f let-g="group">
+  <div class="field" [formGroup]="$any(form.get(g))">
+    <label class="form-label" [for]="g + '-' + f.name">{{ f.label }}@if (isReq(g, f)) {<span class="req">*</span>}</label>
+    @switch (f.type) {
+      @case ('select') {
+        <select class="form-select" [id]="g + '-' + f.name" [formControlName]="f.name" [class.is-invalid]="invalid(g, f.name)">
+          <option value="">{{ f.name === 'designationId' && !optionsFor(f)?.length ? 'Select department first' : f.ph }}</option>
+          @for (o of optionsFor(f); track o) { <option [value]="o">{{ o }}</option> }
+        </select>
+      }
+      @case ('file') {
+        <label class="file-box" [class.is-invalid]="invalid(g, f.name)">
+          <span class="file-btn"><i class="fa-solid fa-arrow-up-from-bracket"></i>Browse</span>
+          <span class="file-name" [class.empty]="!files[g + f.name]">{{ files[g + f.name] || 'No file chosen' }}</span>
+          <input type="file" hidden accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" (change)="pick(g, f.name, $any($event.target))" />
+        </label>
+      }
+      @default {
+        <input class="form-control" [id]="g + '-' + f.name" [type]="f.type ?? 'text'" [formControlName]="f.name"
+               [placeholder]="f.ph ?? ''" [class.is-invalid]="invalid(g, f.name)"
+               [class.date-empty]="f.type === 'date' && !form.get([g, f.name])?.value" />
+      }
+    }
+    @if (invalid(g, f.name)) {
+      <div class="invalid-feedback d-block">{{ form.get([g, f.name])?.hasError('email') ? 'Enter a valid email' : f.label + ' is required' }}</div>
+    }
+  </div>
+</ng-template>
+
+<div class="page-head">
+  <h2 class="page-main-heading">{{ editing ? 'Edit Employee' : 'Create Employee' }}</h2>
+  @if (editing) {
+    <div class="d-flex gap-2">
+      <a [routerLink]="['/updatesalarydetails', editing.code]" class="btn btn-accent"><i class="fa-solid fa-sack-dollar"></i>Update Salary Detail</a>
+      <a [routerLink]="['/employeeview', editing.code]" class="btn btn-cancel"><i class="fa-solid fa-arrow-left"></i>Back</a>
+    </div>
+  } @else {
+    <a routerLink="/employeelist" class="btn btn-accent"><i class="fa-regular fa-eye"></i>View Employee List</a>
+  }
+</div>
+
+<form [formGroup]="form" (ngSubmit)="save()" novalidate class="panel">
+  <section class="form-section">
+    <h3 class="sub-heading">Personal & Job Details</h3>
+    <div class="grid">
+      @for (f of personal; track f.name) { <ng-container *ngTemplateOutlet="fieldTpl; context: { $implicit: f, group: 'personal' }" /> }
+    </div>
+  </section>
+
+  <section class="form-section">
+    <h3 class="sub-heading">Current Address</h3>
+    <div class="grid">
+      @for (f of address; track f.name) { <ng-container *ngTemplateOutlet="fieldTpl; context: { $implicit: f, group: 'current' }" /> }
+    </div>
+  </section>
+
+  <section class="form-section">
+    <div class="section-head">
+      <h3 class="sub-heading">Permanent Address</h3>
+      <div class="form-check m-0">
+        <input type="checkbox" id="sameAddress" class="form-check-input" formControlName="sameAddress" />
+        <label for="sameAddress" class="form-check-label">Same as current address</label>
+      </div>
+    </div>
+    <div class="grid">
+      @for (f of address; track f.name) { <ng-container *ngTemplateOutlet="fieldTpl; context: { $implicit: f, group: 'permanent' }" /> }
+    </div>
+  </section>
+
+  <section class="form-section">
+    <h3 class="sub-heading">Identity & Immigration Details</h3>
+
+    <h4 class="group-heading">Visa Details (If Applicable)</h4>
+    <div class="grid">
+      <div class="field">
+        <label class="form-label" for="visaApplicable">Visa Applicable</label>
+        <select id="visaApplicable" class="form-select" formControlName="visaApplicable">
+          <option value="no">No</option>
+          <option value="yes">Yes</option>
+        </select>
+      </div>
+      @if (visaOn) {
+        @for (f of visa; track f.name) { <ng-container *ngTemplateOutlet="fieldTpl; context: { $implicit: f, group: 'visa' }" /> }
+      }
+    </div>
+
+    <h4 class="group-heading">Passport Details</h4>
+    <div class="grid">
+      @for (f of passport; track f.name) { <ng-container *ngTemplateOutlet="fieldTpl; context: { $implicit: f, group: 'passport' }" /> }
+    </div>
+
+    <h4 class="group-heading">National ID Details</h4>
+    <div class="grid">
+      @for (f of nationalId; track f.name) { <ng-container *ngTemplateOutlet="fieldTpl; context: { $implicit: f, group: 'nationalId' }" /> }
+    </div>
+
+    <h4 class="group-heading">Government ID Details</h4>
+    <div class="grid">
+      @for (f of govId; track f.name) { <ng-container *ngTemplateOutlet="fieldTpl; context: { $implicit: f, group: 'govId' }" /> }
+    </div>
+  </section>
+
+  <section class="form-section">
+    <h3 class="sub-heading">Bank Details</h3>
+    <div class="grid">
+      @for (f of bank; track f.name) { <ng-container *ngTemplateOutlet="fieldTpl; context: { $implicit: f, group: 'bank' }" /> }
+    </div>
+  </section>
+
+  <div class="form-actions">
+    <a [routerLink]="editing ? ['/employeeview', editing.code] : '/employeelist'" class="btn btn-cancel">Cancel</a>
+    <button type="submit" class="btn btn-primary">{{ editing ? 'Update Employee' : 'Save Employee' }}</button>
+  </div>
+</form>

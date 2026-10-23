@@ -1,0 +1,68 @@
+<div class="page-head">
+  <h2 class="page-main-heading">Designation List</h2>
+  <a routerLink="/add-designation" class="btn btn-accent"><i class="fa fa-plus"></i>Add Designation</a>
+</div>
+
+<div class="panel">
+  <div class="filters">
+    <div class="search">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input class="form-control" type="search" placeholder="Search by department or designation" aria-label="Search designations"
+             [ngModel]="search()" (ngModelChange)="onSearch($event)" />
+    </div>
+    <span class="count">{{ filtered().length }} designations</span>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table">
+      <thead><tr><th>Department</th><th>Designation</th><th class="text-end">Employees</th><th class="text-end">Actions</th></tr></thead>
+      <tbody>
+        @for (d of rows(); track d.id) {
+          <tr>
+            <td><span class="clip" [title]="d.department">{{ d.department }}</span></td>
+            <td class="fw-medium"><span class="clip" [title]="d.name">{{ d.name }}</span></td>
+            <td class="text-end num">{{ inUse(d) }}</td>
+            <td class="text-end text-nowrap">
+              <a class="btn-table t-green" title="Edit" [attr.aria-label]="'Edit ' + d.name" [routerLink]="['/add-designation', d.id]"><i class="fa-regular fa-pen-to-square"></i></a>
+              <button class="btn-table t-red" title="Delete" [attr.aria-label]="'Delete ' + d.name" (click)="toDelete.set(d)"><i class="fa-regular fa-trash-can"></i></button>
+            </td>
+          </tr>
+        } @empty {
+          <tr><td colspan="4" class="empty">No designations match your search</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (filtered().length) {
+    <div class="pager">
+      <span>Showing {{ from() }}–{{ to() }} of {{ filtered().length }}</span>
+      <nav aria-label="Pagination">
+        <button (click)="go(page() - 1)" [disabled]="page() === 1" aria-label="Previous page"><i class="fa-solid fa-chevron-left"></i></button>
+        @for (p of [].constructor(pages()); track $index) {
+          <button [class.current]="page() === $index + 1" (click)="go($index + 1)" [attr.aria-current]="page() === $index + 1 ? 'page' : null">{{ $index + 1 }}</button>
+        }
+        <button (click)="go(page() + 1)" [disabled]="page() === pages()" aria-label="Next page"><i class="fa-solid fa-chevron-right"></i></button>
+      </nav>
+    </div>
+  }
+</div>
+
+@if (toDelete(); as d) {
+  <div class="backdrop" (click)="toDelete.set(null)">
+    <div class="dialog" role="alertdialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <div class="dialog-head">
+        <h4>Confirm Delete</h4>
+        <button class="btn-close-popup" (click)="toDelete.set(null)" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="dialog-body">
+        Are you sure you want to delete <b>{{ d.name }}</b> from {{ d.department }}?
+        @if (inUse(d)) { <p class="warn"><i class="fa-solid fa-triangle-exclamation"></i>{{ inUse(d) }} employee(s) currently hold this designation.</p> }
+      </div>
+      <div class="dialog-foot">
+        <button class="btn btn-cancel" (click)="toDelete.set(null)">Cancel</button>
+        <button class="btn btn-danger" (click)="confirmDelete()">Delete</button>
+      </div>
+    </div>
+  </div>
+}

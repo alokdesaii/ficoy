@@ -1,0 +1,46 @@
+.form-section {
+  padding-bottom: 24px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--divider);
+}
+
+.group-heading { margin: 8px 0 16px; color: var(--heading); font-size: 14px; font-weight: 600; }
+.section-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 16px; .sub-heading { margin: 0; } }
+.form-check-label { font-size: 13px; font-weight: 500; }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px 24px;
+  & + .group-heading { margin-top: 24px; }
+}
+
+.file-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 40px;
+  padding: 0 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  cursor: pointer;
+  &.is-invalid { border-color: var(--danger); }
+}
+.file-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 30px;
+  padding: 0 12px;
+  background: var(--brand-tint);
+  color: var(--brand-text);
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 6px;
+}
+.file-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; &.empty { color: var(--muted); } }
+
+.form-actions { display: flex; justify-content: flex-end; gap: 8px; }
+
+@media (max-width: 991px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 575px) { .grid { grid-template-columns: 1fr; } .section-head { flex-wrap: wrap; } }

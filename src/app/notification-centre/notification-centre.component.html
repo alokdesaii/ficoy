@@ -1,0 +1,44 @@
+<div class="page-head">
+  <div>
+    <h2 class="page-main-heading">Notifications</h2>
+    <p class="sub">{{ counts().unread ? counts().unread + ' unread' : 'You\'re all caught up' }} · probation, review and PIP updates</p>
+  </div>
+  <button class="btn btn-cancel" (click)="markAll()" [disabled]="!counts().unread"><i class="fa-solid fa-check-double"></i>Mark all as read</button>
+</div>
+
+<div class="panel">
+  <div class="toolbar">
+    <div class="seg" role="tablist">
+      @for (v of [{ k: 'all', l: 'All' }, { k: 'unread', l: 'Unread' }, { k: 'action', l: 'Needs action' }]; track v.k) {
+        <button role="tab" [class.on]="view() === v.k" [attr.aria-selected]="view() === v.k" (click)="view.set($any(v.k))">{{ v.l }} <span>{{ count(v.k) }}</span></button>
+      }
+    </div>
+    <select class="form-select type" aria-label="Filter by type" [ngModel]="type()" (ngModelChange)="type.set($event)">
+      <option value="">All types</option>
+      @for (e of events; track e.key) { <option [value]="e.key">{{ e.label }}</option> }
+    </select>
+  </div>
+
+  @for (g of groups(); track g.label) {
+    <h3 class="day">{{ g.label }}</h3>
+    <ul class="items">
+      @for (n of g.items; track n.id) {
+        <li [class.unread]="!isRead(n.id)">
+          <span class="ic" [attr.data-t]="n.copy.tone"><i [class]="n.copy.icon"></i></span>
+          <div class="tx">
+            <b>{{ n.copy.title }}</b>
+            <p>{{ n.copy.body }}</p>
+            <span class="meta">{{ n.date | date: 'd MMM y' }} · {{ n.employee }} · you're notified as {{ n.role }}@if (actionable(n)) { <em>Needs action</em> }</span>
+          </div>
+          <div class="acts">
+            <a class="btn btn-sm-row" [class.btn-primary]="actionable(n)" [class.btn-cancel]="!actionable(n)" [routerLink]="n.link" (click)="open(n)">{{ n.copy.cta }}</a>
+            <button class="icon" (click)="toggle(n)" [title]="isRead(n.id) ? 'Mark as unread' : 'Mark as read'" [attr.aria-label]="isRead(n.id) ? 'Mark as unread' : 'Mark as read'">
+              <i [class]="isRead(n.id) ? 'fa-regular fa-envelope' : 'fa-regular fa-envelope-open'"></i></button>
+          </div>
+        </li>
+      }
+    </ul>
+  } @empty {
+    <div class="empty"><i class="fa-regular fa-bell-slash"></i><b>Nothing here</b><span>{{ view() === 'unread' ? 'No unread notifications.' : view() === 'action' ? 'Nothing needs your action right now.' : 'No notifications match this filter.' }}</span></div>
+  }
+</div>

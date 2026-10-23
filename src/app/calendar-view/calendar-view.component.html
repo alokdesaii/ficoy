@@ -1,0 +1,62 @@
+<div class="page-head">
+  <div>
+    <h2 class="page-main-heading">Calendar View</h2>
+    <p class="sub"><i class="fa-regular fa-clock"></i>Shift: {{ shift }} · Mon–Fri</p>
+  </div>
+  <div class="seg" role="tablist">
+    <button role="tab" [class.on]="view() === 'month'" [attr.aria-selected]="view() === 'month'" (click)="view.set('month')">Month</button>
+    <button role="tab" [class.on]="view() === 'year'" [attr.aria-selected]="view() === 'year'" (click)="view.set('year')">Year</button>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="toolbar">
+    <div class="nav">
+      <button class="icon" (click)="move(-1)" [attr.aria-label]="view() === 'month' ? 'Previous month' : 'Previous year'"><i class="fa-solid fa-chevron-left"></i></button>
+      <button class="icon" (click)="move(1)" [attr.aria-label]="view() === 'month' ? 'Next month' : 'Next year'"><i class="fa-solid fa-chevron-right"></i></button>
+      <button class="btn btn-cancel today-btn" (click)="today()" [disabled]="isCurrent()">Today</button>
+    </div>
+    <h3 class="title">{{ cursor() | date: (view() === 'month' ? 'MMMM y' : 'y') }}</h3>
+    <ul class="legend">
+      <li><span class="sw hol"></span>Holiday</li>
+      <li><span class="sw lv"></span>Leave</li>
+      <li><span class="sw pend"></span>Pending</li>
+      <li><span class="sw off"></span>Weekly off</li>
+    </ul>
+  </div>
+
+  @if (view() === 'month') {
+    <div class="stats">
+      <span><b>{{ stats().working }}</b> working days</span>
+      <span><b>{{ stats().holidays }}</b> holidays</span>
+      <span><b>{{ stats().leave }}</b> leave days</span>
+    </div>
+    <div class="month" role="grid">
+      @for (w of weekdays; track w) { <div class="wd" role="columnheader">{{ w }}</div> }
+      @for (c of cells(); track c.iso) {
+        <div class="day" role="gridcell" [class.out]="!c.inMonth" [class.off]="c.weekend" [class.today]="c.today">
+          <span class="num">{{ c.day }}</span>
+          @if (c.holiday) { <span class="chip hol" [title]="c.holiday">{{ c.holiday }}</span> }
+          @if (c.leave; as l) { <span class="chip" [class.lv]="l.status === 'Approved'" [class.pend]="l.status !== 'Approved'" [title]="l.type + ' · ' + l.status">{{ l.type }}{{ l.half ? ' · ½' : '' }}</span> }
+          @if (c.weekend && !c.holiday && !c.leave) { <span class="off-lbl">Weekly off</span> }
+        </div>
+      }
+    </div>
+  } @else {
+    <div class="year">
+      @for (m of months(); track m.first.getMonth()) {
+        <button class="mini" (click)="openMonth(m.first)" [attr.aria-label]="'Open ' + (m.first | date: 'MMMM y')">
+          <span class="mini-title">{{ m.first | date: 'MMMM' }}</span>
+          <span class="mini-grid">
+            @for (w of weekdays; track w) { <span class="mwd">{{ w[0] }}</span> }
+            @for (c of m.cells; track c.iso) {
+              <span class="md" [class.out]="!c.inMonth" [class.off]="c.weekend" [class.today]="c.today"
+                    [class.hol]="c.inMonth && c.holiday" [class.lv]="c.inMonth && c.leave?.status === 'Approved'" [class.pend]="c.inMonth && c.leave && c.leave.status !== 'Approved'"
+                    [title]="c.inMonth ? (c.holiday || c.leave?.type || '') : ''">{{ c.day }}</span>
+            }
+          </span>
+        </button>
+      }
+    </div>
+  }
+</div>

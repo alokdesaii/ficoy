@@ -1,0 +1,85 @@
+<div class="page-head">
+  <div>
+    <h2 class="page-main-heading">Notification Designs</h2>
+    <p class="sub">Email and in-app versions of every probation notification. Recipients follow <a routerLink="/probation/settings">Probation Settings</a>.</p>
+  </div>
+</div>
+
+<div class="layout">
+  <nav class="panel events" aria-label="Notification events">
+    @for (g of groups; track g.title) {
+      <h4>{{ g.title }}</h4>
+      @for (k of g.keys; track k) {
+        <button [class.on]="event() === k" (click)="pick(k)" [attr.aria-current]="event() === k ? 'true' : null">
+          <span>{{ label(k) }}</span><em>{{ s().recipients[k].length }}</em>
+        </button>
+      }
+    }
+  </nav>
+
+  <div class="stage">
+    <div class="bar">
+      <div class="seg" role="tablist" aria-label="Recipient">
+        @for (r of roles; track r) {
+          <button role="tab" [class.on]="role() === r" [class.off]="!recipients().includes(r)" (click)="role.set(r)" [attr.aria-selected]="role() === r">
+            {{ r }}@if (!recipients().includes(r)) { <i class="fa-solid fa-ban" title="Not sent to this role"></i> }</button>
+        }
+      </div>
+      <div class="seg small" role="tablist" aria-label="Width">
+        <button [class.on]="width() === 'desktop'" (click)="width.set('desktop')" aria-label="Desktop width"><i class="fa-solid fa-desktop"></i></button>
+        <button [class.on]="width() === 'mobile'" (click)="width.set('mobile')" aria-label="Mobile width"><i class="fa-solid fa-mobile-screen"></i></button>
+      </div>
+      <span class="ch">@if (s().channels.email) { <b><i class="fa-regular fa-envelope"></i>Email</b> } @if (s().channels.inApp) { <b><i class="fa-regular fa-bell"></i>In-app</b> }</span>
+    </div>
+
+    @if (!sent()) {
+      <p class="not-sent"><i class="fa-solid fa-circle-info"></i>{{ role() }} doesn't receive "{{ label(event()) }}" with the current settings. This is how it would look if enabled.</p>
+    }
+
+    <div class="previews">
+      <section class="email-wrap" [class.mobile]="width() === 'mobile'" aria-label="Email preview">
+        <div class="mail-meta">
+          <div><span>From</span>ficoy HR &lt;no-reply&#64;ficoy.app&gt;</div>
+          <div><span>Subject</span><b>{{ copy().title }}</b></div>
+        </div>
+        <!-- the email is rendered on a fixed light palette in both themes, as mail clients would -->
+        <div class="mail">
+          <div class="m-head"><img src="assets/images/logo-white.svg" alt="ficoy" /></div>
+          <div class="m-body">
+            <span class="m-ic" [attr.data-t]="copy().tone"><i [class]="copy().icon"></i></span>
+            <h1>{{ copy().title }}</h1>
+            <p>{{ greeting() }}</p>
+            <p>{{ copy().body }}</p>
+            @if (facts().length) {
+              <table class="m-facts">@for (f of facts(); track f[0]) { <tr><td>{{ f[0] }}</td><td>{{ f[1] }}</td></tr> }</table>
+            }
+            <a class="m-cta">{{ copy().cta }}</a>
+            <p class="m-small">Or open ficoy and go to Probation.</p>
+          </div>
+          <div class="m-foot">
+            <p>Harbour and Hills Financial Services Limited · Tsim Sha Tsui, Kowloon, Hong Kong</p>
+            <p>You're receiving this because you're the {{ role() === 'RM' ? 'reporting manager' : role() === 'Employee' ? 'employee' : role() + ' team' }} on this probation.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="inapp" aria-label="In-app previews">
+        <h4>Bell dropdown</h4>
+        <div class="dd">
+          <div class="dd-item">
+            <span class="ic" [attr.data-t]="copy().tone"><i [class]="copy().icon"></i></span>
+            <span class="tx"><b>{{ copy().title }}</b><span>{{ copy().body }}</span><em>Just now</em></span>
+          </div>
+        </div>
+        <h4>Toast</h4>
+        <div class="toast-pv" [attr.data-t]="copy().tone">
+          <span class="ic" [attr.data-t]="copy().tone"><i [class]="copy().icon"></i></span>
+          <div class="tx"><b>{{ copy().title }}</b><span>{{ copy().body }}</span></div>
+          <a>{{ copy().cta }}</a>
+        </div>
+        <h4>Sent to</h4>
+        <ul class="to">@for (r of recipients(); track r) { <li>{{ r }}</li> } @empty { <li class="none">Nobody (disabled in settings)</li> }</ul>
+      </section>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,42 @@
+// the payslip is a document: fixed light palette in both themes (matches UAT, prints cleanly)
+$navy: #023e63; $teal: #00bfb3; $teal-ink: #0b8a82; $tint: #edf4f8; $line: #adadad; $ink: #000c14;
+
+.slip-dialog { max-width: 880px; }
+.dialog-body { background: var(--bg); }
+.slip { max-width: 800px; margin: 0 auto; border: 1px solid $line; background: #fff; color: $ink; font-size: 13px; }
+
+.top { padding: 30px; }
+.head { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px;
+  img { width: 150px; height: auto; }
+  .right { text-align: right; }
+  .kicker { color: #333; font-size: 16px; }
+  h2 { margin: 3px 0 0; color: $navy; font-size: 28px; font-weight: 700; line-height: 1.2; }
+  .addr { margin: 10px 0 0; color: #333; font-size: 14px; font-weight: 500; line-height: 1.35; } }
+.rule { margin: 16px 0 20px; border: 0; border-top: 2px solid $teal; opacity: 1; }
+
+table { width: 100%; border-collapse: collapse; }
+.box { border: 1px solid $line; table-layout: fixed;
+  .band { padding: 12px; background: $navy; color: #fff; font-size: 16px; font-weight: 700; text-align: center; }
+  td { padding: 10px; }
+  .k { font-weight: 700; }
+  .v { background: $tint; }
+  .split { border-left: 2px solid $teal; } }
+
+.bottom { padding: 30px; background: $tint; }
+.days td { padding: 12px; border: 1px solid #fff;
+  span { display: block; color: $teal-ink; font-weight: 700; } b { display: block; margin-top: 5px; } }
+
+.money { display: grid; grid-template-columns: 1fr 1fr; align-items: start; gap: 20px; border: 1px solid #fff;
+  table:first-child { border-right: 1px solid $line; }
+  th { padding: 10px; background: #fff; font-size: 14px; font-weight: 700; text-transform: uppercase; border-top: 1px solid $line; border-bottom: 1px solid $line; text-align: left; }
+  td { padding: 10px; } .k { background: #fff; font-weight: 700; } .v { background: $tint; border-bottom: 1px solid #fff; font-variant-numeric: tabular-nums; }
+  .sum .k { color: $teal-ink; } .sum .v { font-weight: 700; } }
+
+.net { margin-top: 25px; border: 1px solid $line;
+  td { padding: 12px; background: #fff; font-weight: 700; border-bottom: 1px solid $line; font-variant-numeric: tabular-nums; }
+  .lbl { width: 30%; background: $teal; color: $ink; border-bottom-color: #fff; } } // dark text on teal: white is ~2.3:1
+
+.foot { padding: 15px; background: $navy; color: #fff; text-align: center; }
+.empty { color: var(--text-2); }
+
+@media (max-width: 767px) { .money { grid-template-columns: 1fr; } .head { flex-direction: column; .right { text-align: left; } .addr { margin-left: 0; } } }

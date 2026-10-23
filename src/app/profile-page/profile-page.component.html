@@ -1,0 +1,126 @@
+<div class="page-head">
+  <h2 class="page-main-heading">My Profile</h2>
+</div>
+
+<div class="hero">
+  <div class="photo">
+    @if (photo()) { <img [src]="photo()" alt="Profile photo" /> } @else { <span>{{ initials }}</span> }
+    <label class="cam" title="Change photo">
+      <i class="fa-solid fa-camera"></i><span class="visually-hidden">Change photo</span>
+      <input type="file" hidden accept="image/*" (change)="pickPhoto($any($event.target))" />
+    </label>
+  </div>
+  <div class="who">
+    <h3>{{ e().name }}</h3>
+    <p class="role">{{ e().designation }} · {{ e().department }}</p>
+    <div class="contacts">
+      <span><i class="fa-solid fa-phone"></i>{{ e().mobile }}</span>
+      <span><i class="fa-regular fa-envelope"></i>{{ e().email }}</span>
+      <span><i class="fa-regular fa-id-badge"></i>{{ e().code }}</span>
+    </div>
+    <p class="updated">Last updated {{ x().updatedAt | date: 'd MMM y, hh:mm a' }}</p>
+  </div>
+</div>
+
+<div class="panel">
+  @for (sec of [
+    { k: 'personal', t: 'Personal Information', i: 'fa-regular fa-user' },
+    { k: 'company', t: 'Company Information', i: 'fa-solid fa-briefcase' },
+    { k: 'address', t: 'Address Information', i: 'fa-solid fa-location-dot' },
+    { k: 'identity', t: 'Identity Information', i: 'fa-regular fa-id-card' }
+  ]; track sec.k) {
+    <section class="acc" [class.open]="open().has(sec.k)">
+      <button class="acc-head" (click)="toggle(sec.k)" [attr.aria-expanded]="open().has(sec.k)">
+        <i [class]="sec.i"></i><span>{{ sec.t }}</span><i class="fa-solid fa-chevron-down caret"></i>
+      </button>
+      @if (open().has(sec.k)) {
+        <div class="acc-body">
+          @switch (sec.k) {
+            @case ('personal') {
+              <dl class="kv">
+                <div><dt>Date of Birth</dt><dd>{{ x().dob | date: 'dd MMM y' }}</dd></div>
+                <div><dt>Gender</dt><dd>{{ x().gender || '—' }}</dd></div>
+                <div><dt>Blood Group</dt><dd [class.dash]="!x().bloodGroup">{{ x().bloodGroup || '—' }}</dd></div>
+                <div><dt>Nationality</dt><dd>{{ x().nationality || '—' }}</dd></div>
+                <div><dt>Marital Status</dt><dd [class.dash]="!x().maritalStatus">{{ x().maritalStatus || '—' }}</dd></div>
+                <div><dt>Contact Number</dt><dd>{{ e().mobile }}</dd></div>
+              </dl>
+            }
+            @case ('company') {
+              <dl class="kv">
+                <div><dt>Company</dt><dd>{{ x().company }}</dd></div>
+                <div><dt>Branch</dt><dd>{{ x().branch }}</dd></div>
+                <div><dt>Department</dt><dd>{{ e().department }}</dd></div>
+                <div><dt>Employment Type</dt><dd>{{ x().employmentType }}</dd></div>
+                <div><dt>Joining Date</dt><dd>{{ e().joined | date: 'dd MMM y' }}</dd></div>
+                <div><dt>Designation</dt><dd>{{ e().designation }}</dd></div>
+                <div><dt>Reporting Manager</dt><dd [class.dash]="!e().manager">{{ e().manager || '—' }}</dd></div>
+              </dl>
+            }
+            @case ('address') {
+              <div class="addr-grid">
+                @for (a of [{ t: 'Current Address', v: addr(x().current) }, { t: 'Permanent Address', v: addr(x().permanent) }]; track a.t) {
+                  <div class="addr">
+                    <h5>{{ a.t }}</h5>
+                    @if (a.v.line1) { <p>{{ a.v.line1 }}</p> }
+                    <p>{{ a.v.line2 || '—' }}</p>
+                    <p class="muted">{{ a.v.line3 }}</p>
+                  </div>
+                }
+              </div>
+            }
+            @case ('identity') {
+              <div class="docs-head">
+                <p class="muted">Upload any of your photo ID documents.</p>
+                <button class="btn btn-cancel btn-sm-row" (click)="add()" [disabled]="docs().length >= types.length"><i class="fa-solid fa-plus"></i>Add details</button>
+              </div>
+              <div class="docs">
+                @for (d of docs(); track d.type) {
+                  <div class="doc">
+                    <div class="doc-top"><span class="doc-ico"><i class="fa-regular fa-id-card"></i></span><b>{{ d.type }}</b>
+                      <button class="btn-table t-green" title="Edit" [attr.aria-label]="'Edit ' + d.type" (click)="edit(d)"><i class="fa-regular fa-pen-to-square"></i></button>
+                    </div>
+                    <dl><div><dt>Number</dt><dd>{{ d.number }}</dd></div><div><dt>Country</dt><dd>{{ d.country }}</dd></div></dl>
+                    <button class="link" (click)="view(d)"><i class="fa-regular fa-file-lines"></i>{{ d.file }}</button>
+                  </div>
+                } @empty { <p class="muted">No ID documents uploaded yet.</p> }
+              </div>
+            }
+          }
+        </div>
+      }
+    </section>
+  }
+</div>
+
+@if (draft(); as d) {
+  <div class="backdrop" (click)="draft.set(null)">
+    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="docTitle" (click)="$event.stopPropagation()">
+      <div class="dialog-head">
+        <h4 id="docTitle">{{ editing ? 'Edit' : 'Upload' }} ID Document</h4>
+        <button class="btn-close-popup" (click)="draft.set(null)" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="dialog-body stack">
+        <div class="field"><label class="form-label" for="dt">Document Type<span class="req">*</span></label>
+          <select id="dt" class="form-select" [(ngModel)]="d.type" [disabled]="!!editing" [class.is-invalid]="tried && !d.type">
+            <option value="">Select document type</option>
+            @for (t of types; track t) { <option [value]="t" [disabled]="taken(t)">{{ t }}</option> }
+          </select></div>
+        <div class="field"><label class="form-label" for="dn">Document Number<span class="req">*</span></label>
+          <input id="dn" class="form-control" [(ngModel)]="d.number" placeholder="Enter document number" [class.is-invalid]="tried && !d.number.trim()" /></div>
+        <div class="field"><label class="form-label" for="dc">Issuing Country<span class="req">*</span></label>
+          <input id="dc" class="form-control" [(ngModel)]="d.country" placeholder="e.g. Hong Kong" [class.is-invalid]="tried && !d.country.trim()" /></div>
+        <div class="field"><label class="form-label">Document File<span class="req">*</span></label>
+          <label class="file-box" [class.is-invalid]="tried && !d.file">
+            <span class="file-btn"><i class="fa-solid fa-arrow-up-from-bracket"></i>Browse</span>
+            <span class="file-name" [class.empty]="!d.file">{{ d.file || 'No file chosen' }}</span>
+            <input type="file" hidden accept=".pdf,.jpg,.jpeg,.png" (change)="pickDoc($any($event.target))" />
+          </label></div>
+      </div>
+      <div class="dialog-foot">
+        <button class="btn btn-cancel" (click)="draft.set(null)">Cancel</button>
+        <button class="btn btn-primary" (click)="save()">Save</button>
+      </div>
+    </div>
+  </div>
+}

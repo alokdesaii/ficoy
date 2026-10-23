@@ -1,0 +1,93 @@
+<div class="page-head">
+  <h2 class="page-main-heading">{{ viewing() ? 'Department Details' : 'Department List' }}</h2>
+  @if (viewing()) {
+    <button class="btn btn-cancel" (click)="viewing.set(null)"><i class="fa-solid fa-arrow-left"></i>Back</button>
+  } @else {
+    <a routerLink="/departmentadd" class="btn btn-accent"><i class="fa fa-plus"></i>Add Department</a>
+  }
+</div>
+
+@if (viewing(); as d) {
+  <div class="panel">
+    <div class="detail-head">
+      <span class="dept-icon"><i class="fa-solid fa-building"></i></span>
+      <h3>{{ d.name }}</h3>
+      <a [routerLink]="['/departmentadd', d.id]" class="btn btn-primary ms-auto"><i class="fa-regular fa-pen-to-square"></i>Edit Department</a>
+    </div>
+    <dl class="detail-grid">
+      <div><dt>Head of Department</dt><dd>{{ d.head || 'Not assigned' }}</dd></div>
+      <div><dt>Location</dt><dd>{{ d.location }}</dd></div>
+      <div><dt>Employee Count</dt><dd>{{ count(d) }}</dd></div>
+    </dl>
+  </div>
+} @else {
+  <div class="panel">
+    <div class="filters">
+      <div class="field">
+        <label class="form-label" for="q">Department Name</label>
+        <div class="search">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input id="q" class="form-control" type="search" placeholder="Search by department name" [ngModel]="search()" (ngModelChange)="search.set($event)" />
+        </div>
+      </div>
+      <div class="field">
+        <label class="form-label" for="head">Head of Department</label>
+        <select id="head" class="form-select" [ngModel]="head()" (ngModelChange)="head.set($event)">
+          <option value="">All</option>
+          @for (h of heads(); track h) { <option [value]="h">{{ h }}</option> }
+        </select>
+      </div>
+      <div class="field">
+        <label class="form-label" for="loc">Location</label>
+        <select id="loc" class="form-select" [ngModel]="location()" (ngModelChange)="location.set($event)">
+          <option value="">All</option>
+          @for (l of locations; track l) { <option [value]="l">{{ l }}</option> }
+        </select>
+      </div>
+      @if (filtering) { <button class="btn btn-cancel" (click)="clear()">Clear</button> }
+      <span class="count">{{ filtered().length }} of {{ departments().length }} departments</span>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table">
+        <thead><tr><th>Department</th><th>Head of Department</th><th>Location</th><th class="text-end">Employee Count</th><th class="text-end">Actions</th></tr></thead>
+        <tbody>
+          @for (d of filtered(); track d.id) {
+            <tr>
+              <td class="fw-medium"><span class="name" [title]="d.name">{{ d.name }}</span></td>
+              <td [class.muted]="!d.head">{{ d.head || 'Not assigned' }}</td>
+              <td>{{ d.location }}</td>
+              <td class="text-end num">{{ count(d) }}</td>
+              <td class="text-end text-nowrap">
+                <button class="btn-table t-blue" title="View" [attr.aria-label]="'View ' + d.name" (click)="viewing.set(d)"><i class="fa-regular fa-eye"></i></button>
+                <a class="btn-table t-green" title="Edit" [attr.aria-label]="'Edit ' + d.name" [routerLink]="['/departmentadd', d.id]"><i class="fa-regular fa-pen-to-square"></i></a>
+                <button class="btn-table t-red" title="Delete" [attr.aria-label]="'Delete ' + d.name" (click)="toDelete.set(d)"><i class="fa-regular fa-trash-can"></i></button>
+              </td>
+            </tr>
+          } @empty {
+            <tr><td colspan="5" class="empty">No departments match your filters</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+}
+
+@if (toDelete(); as d) {
+  <div class="backdrop" (click)="toDelete.set(null)">
+    <div class="dialog" role="alertdialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <div class="dialog-head">
+        <h4>Confirm Delete</h4>
+        <button class="btn-close-popup" (click)="toDelete.set(null)" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="dialog-body">
+        Are you sure you want to delete <b>{{ d.name }}</b>?
+        @if (count(d)) { <p class="warn"><i class="fa-solid fa-triangle-exclamation"></i>{{ count(d) }} employee(s) are assigned to this department.</p> }
+      </div>
+      <div class="dialog-foot">
+        <button class="btn btn-cancel" (click)="toDelete.set(null)">Cancel</button>
+        <button class="btn btn-danger" (click)="confirmDelete()">Delete</button>
+      </div>
+    </div>
+  </div>
+}

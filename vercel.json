@@ -1,0 +1,7 @@
+{
+  "framework": null,
+  "installCommand": "npm ci",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist/ficoy/browser",
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+}

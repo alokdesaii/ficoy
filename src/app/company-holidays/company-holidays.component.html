@@ -1,0 +1,93 @@
+@if (mode() === 'list') {
+  <div class="page-head">
+    <h2 class="page-main-heading">Company Holidays</h2>
+    <button class="btn btn-accent" (click)="add()"><i class="fa fa-plus"></i>Add Holiday</button>
+  </div>
+
+  <div class="panel">
+    <div class="toolbar">
+      <div class="year">
+        <button (click)="year.set(year() - 1)" aria-label="Previous year"><i class="fa-solid fa-chevron-left"></i></button>
+        <b>{{ year() }}</b>
+        <button (click)="year.set(year() + 1)" aria-label="Next year"><i class="fa-solid fa-chevron-right"></i></button>
+      </div>
+      <span class="count">{{ rows().length }} holidays</span>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table">
+        <thead><tr><th>Start Date</th><th>End Date</th><th>Holiday Name</th><th>Type</th><th class="text-end">Actions</th></tr></thead>
+        <tbody>
+          @for (h of rows(); track h.id) {
+            <tr [class.past]="past(h)" [class.next]="h === next()">
+              <td class="num">{{ h.from | date: 'EEE, dd MMM y' }}</td>
+              <td class="num">{{ h.to | date: 'EEE, dd MMM y' }}</td>
+              <td class="fw-medium">{{ h.name }} @if (h === next()) { <span class="up">Next up</span> }</td>
+              <td class="nowrap muted">{{ h.type }}</td>
+              <td class="text-end text-nowrap">
+                <button class="btn-table t-green" title="Edit" [attr.aria-label]="'Edit ' + h.name" (click)="edit(h)"><i class="fa-regular fa-pen-to-square"></i></button>
+                <button class="btn-table t-red" title="Delete" [attr.aria-label]="'Delete ' + h.name" (click)="toDelete.set(h)"><i class="fa-regular fa-trash-can"></i></button>
+              </td>
+            </tr>
+          } @empty {
+            <tr><td colspan="5" class="empty">No holidays added for {{ year() }}</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+} @else {
+  <div class="page-head">
+    <h2 class="page-main-heading">{{ editing() ? 'Edit Holiday' : 'Add Holiday' }}</h2>
+    <button class="btn btn-cancel" (click)="mode.set('list')"><i class="fa-solid fa-arrow-left"></i>Back</button>
+  </div>
+
+  <form class="panel" [formGroup]="form" (ngSubmit)="save()" novalidate>
+    <h3 class="sub-heading">Holiday Details</h3>
+    <div class="form-grid four">
+      <div class="field">
+        <label class="form-label" for="from">From Date<span class="req">*</span></label>
+        <input id="from" class="form-control" type="date" formControlName="from" (change)="setFrom(form.controls.from.value)"
+               [class.date-empty]="!form.controls.from.value" [class.is-invalid]="bad('from')" />
+        @if (bad('from')) { <div class="invalid-feedback d-block">From date is required</div> }
+      </div>
+      <div class="field">
+        <label class="form-label" for="to">To Date<span class="req">*</span></label>
+        <input id="to" class="form-control" type="date" formControlName="to" [min]="form.controls.from.value || null"
+               [class.date-empty]="!form.controls.to.value" [class.is-invalid]="bad('to') || rangeBad" />
+        @if (rangeBad) { <div class="invalid-feedback d-block">Must be on or after the from date</div> }
+      </div>
+      <div class="field">
+        <label class="form-label" for="name">Holiday Name<span class="req">*</span></label>
+        <input id="name" class="form-control" formControlName="name" placeholder="Enter holiday name" maxlength="80" [class.is-invalid]="bad('name')" />
+        @if (bad('name')) { <div class="invalid-feedback d-block">Holiday name is required</div> }
+      </div>
+      <div class="field">
+        <label class="form-label" for="type">Holiday Type<span class="req">*</span></label>
+        <select id="type" class="form-select" formControlName="type">
+          @for (t of types; track t) { <option>{{ t }}</option> }
+        </select>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button type="button" class="btn btn-cancel" (click)="mode.set('list')">Cancel</button>
+      <button type="submit" class="btn btn-primary">{{ editing() ? 'Update Holiday' : 'Save Holiday' }}</button>
+    </div>
+  </form>
+}
+
+@if (toDelete(); as h) {
+  <div class="backdrop" (click)="toDelete.set(null)">
+    <div class="dialog" role="alertdialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <div class="dialog-head">
+        <h4>Confirm Delete</h4>
+        <button class="btn-close-popup" (click)="toDelete.set(null)" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="dialog-body">Are you sure you want to delete the holiday <b>{{ h.name }}</b> ({{ h.from | date: 'd MMM y' }})?</div>
+      <div class="dialog-foot">
+        <button class="btn btn-cancel" (click)="toDelete.set(null)">Cancel</button>
+        <button class="btn btn-danger" (click)="confirmDelete()">Delete</button>
+      </div>
+    </div>
+  </div>
+}

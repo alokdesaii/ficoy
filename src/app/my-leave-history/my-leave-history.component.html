@@ -1,0 +1,94 @@
+<div class="page-head">
+  <h2 class="page-main-heading">My Leave History</h2>
+  <a routerLink="/myleaveapply" class="btn btn-accent"><i class="fa fa-plus"></i>Apply Leave</a>
+</div>
+
+<div class="panel">
+  <div class="filters">
+    <div class="field"><label class="form-label" for="from">From</label>
+      <input id="from" class="form-control" type="date" [class.date-empty]="!from()" [max]="to() || null" [ngModel]="from()" (ngModelChange)="set(from, $event)" /></div>
+    <div class="field"><label class="form-label" for="to">To</label>
+      <input id="to" class="form-control" type="date" [class.date-empty]="!to()" [min]="from() || null" [ngModel]="to()" (ngModelChange)="set(to, $event)" /></div>
+    <div class="field"><label class="form-label" for="ty">Leave Type</label>
+      <select id="ty" class="form-select" [ngModel]="type()" (ngModelChange)="set(type, $event)">
+        <option value="">All leave types</option>
+        @for (t of types; track t) { <option>{{ t }}</option> }
+      </select></div>
+    <div class="field"><label class="form-label" for="st">Status</label>
+      <select id="st" class="form-select" [ngModel]="status()" (ngModelChange)="set(status, $event)">
+        <option value="">All statuses</option>
+        @for (s of statuses; track s) { <option>{{ s }}</option> }
+      </select></div>
+    @if (filtering) { <button class="btn btn-cancel" (click)="clear()">Clear</button> }
+  </div>
+
+  <div class="table-responsive">
+    <table stack class="table">
+      <thead><tr>
+        <th>Leave Type</th><th>Session</th><th>From</th><th>To</th><th class="text-end">Days</th><th>HR Comments</th><th>Remarks</th><th>Status</th><th class="text-end">Action</th>
+      </tr></thead>
+      <tbody>
+        @for (l of rows(); track l.id) {
+          <tr>
+            <td class="fw-medium nowrap">{{ l.type }}</td>
+            <td class="nowrap muted">{{ l.session }}</td>
+            <td class="num">{{ l.from | date: 'dd MMM y' }}</td>
+            <td class="num">{{ l.to | date: 'dd MMM y' }}</td>
+            <td class="num text-end">{{ days(l) }}</td>
+            <td class="clip" [class.dash]="!l.adminComment" [title]="l.adminComment">{{ l.adminComment || '—' }}</td>
+            <td class="clip" [class.dash]="!l.reason" [title]="l.reason">{{ l.reason || '—' }}</td>
+            <td><span class="pill" [attr.data-s]="l.status">{{ l.status }}</span></td>
+            <td class="text-end">
+              @if (canCancel(l)) {
+                <button class="btn btn-cancel btn-sm-row" (click)="toCancel.set(l)">Cancel</button>
+              } @else { <span class="dash">—</span> }
+            </td>
+          </tr>
+        } @empty {
+          <tr><td colspan="9" class="empty">
+            @if (mine().length) { No leave matches your filters } @else {
+              You haven't applied for any leave yet. <a routerLink="/myleaveapply">Apply for leave</a>
+            }
+          </td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pager">
+    <label class="size">Show
+      <select class="form-select" [ngModel]="size()" (ngModelChange)="set(size, +$event)">
+        @for (n of [10, 25, 50, 100]; track n) { <option [value]="n">{{ n }}</option> }
+      </select>
+      entries
+    </label>
+    <span>Showing {{ first() }}–{{ last() }} of {{ filtered().length }}</span>
+    <nav aria-label="Pagination">
+      <button (click)="go(page() - 1)" [disabled]="page() === 1" aria-label="Previous page"><i class="fa-solid fa-chevron-left"></i></button>
+      <span class="pg">Page {{ page() }} of {{ pages() }}</span>
+      <button (click)="go(page() + 1)" [disabled]="page() === pages()" aria-label="Next page"><i class="fa-solid fa-chevron-right"></i></button>
+    </nav>
+  </div>
+</div>
+
+@if (toCancel(); as l) {
+  <div class="backdrop" (click)="toCancel.set(null)">
+    <div class="dialog" role="alertdialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <div class="dialog-head">
+        <h4>Cancel Leave</h4>
+        <button class="btn-close-popup" (click)="toCancel.set(null)" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="dialog-body">
+        Cancel your <b>{{ l.type }}</b> from {{ l.from | date: 'd MMM' }} to {{ l.to | date: 'd MMM y' }} ({{ days(l) }} day{{ days(l) === 1 ? '' : 's' }})?
+        <p class="hint">
+          @if (l.status === 'Pending') { The request will be withdrawn right away. }
+          @else { This leave is already approved, so HR must approve the cancellation. }
+        </p>
+      </div>
+      <div class="dialog-foot">
+        <button class="btn btn-cancel" (click)="toCancel.set(null)">Keep Leave</button>
+        <button class="btn btn-danger" (click)="confirmCancel()">{{ l.status === 'Pending' ? 'Withdraw Request' : 'Request Cancellation' }}</button>
+      </div>
+    </div>
+  </div>
+}

@@ -1,0 +1,81 @@
+<div class="page-head">
+  <h2 class="page-main-heading">Apply Leave</h2>
+</div>
+
+@if (done(); as d) {
+  <div class="success">
+    <i class="fa-solid fa-circle-check"></i>
+    <span>Your request for <b>{{ d.days }} day(s) of {{ d.type }}</b> was submitted and is pending approval.</span>
+    <a routerLink="/myleavehistory">View my leave history</a>
+    <button class="x" (click)="done.set(null)" aria-label="Dismiss"><i class="fa-solid fa-xmark"></i></button>
+  </div>
+}
+
+<div class="layout">
+  <form class="panel" (ngSubmit)="submit()" novalidate>
+    <h3 class="sub-heading">Leave Details</h3>
+    <div class="grid">
+      <div class="field">
+        <label class="form-label" for="type">Leave Type<span class="req">*</span></label>
+        <select id="type" name="type" class="form-select" [ngModel]="type()" (ngModelChange)="type.set($event)" [class.is-invalid]="tried() && !type()">
+          <option value="">Select leave type</option>
+          @for (t of types; track t.name) { <option [value]="t.name" [disabled]="t.left() <= 0">{{ t.name }} ({{ t.left() }} available)</option> }
+        </select>
+      </div>
+      <div class="field">
+        <label class="form-label" for="session">Session<span class="req">*</span></label>
+        <select id="session" name="session" class="form-select" [ngModel]="session()" (ngModelChange)="setSession($event)" [class.is-invalid]="tried() && !session()">
+          <option value="">Select session</option>
+          <option>Full Day</option><option>First Half</option><option>Second Half</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="form-label" for="from">From Date<span class="req">*</span></label>
+        <input id="from" name="from" class="form-control" type="date" [min]="today" [class.date-empty]="!from()" [ngModel]="from()" (ngModelChange)="setFrom($event)"
+               [class.is-invalid]="tried() && !from()" />
+      </div>
+      <div class="field">
+        <label class="form-label" for="to">To Date<span class="req">*</span></label>
+        <input id="to" name="to" class="form-control" type="date" [min]="from() || today" [disabled]="half()" [class.date-empty]="!to()" [ngModel]="to()" (ngModelChange)="to.set($event)"
+               [class.is-invalid]="tried() && (!to() || to() < from())" />
+        @if (half()) { <div class="hint">Half-day leave is for a single date</div> }
+      </div>
+      <div class="field span-2">
+        <label class="form-label" for="reason">Remarks <span class="opt">(optional)</span></label>
+        <textarea id="reason" name="reason" class="form-control" rows="3" placeholder="Reason for leave" [(ngModel)]="reason"></textarea>
+      </div>
+      @if (sick()) {
+        <div class="field span-2">
+          <label class="form-label">Medical Certificate<span class="req">*</span></label>
+          <label class="file-box" [class.is-invalid]="tried() && !file">
+            <span class="file-btn"><i class="fa-solid fa-arrow-up-from-bracket"></i>Browse</span>
+            <span class="file-name" [class.empty]="!file">{{ file || 'No file chosen' }}</span>
+            <input type="file" hidden accept=".pdf,.jpg,.jpeg,.png" (change)="pick($any($event.target))" />
+          </label>
+          <div class="hint">PDF, JPG or PNG up to 5MB</div>
+        </div>
+      }
+    </div>
+
+    <div class="form-actions">
+      @if (tried() && error()) { <span class="err"><i class="fa-solid fa-circle-exclamation"></i>{{ error() }}</span> }
+      <button type="button" class="btn btn-cancel" (click)="reset()">Reset</button>
+      <button type="submit" class="btn btn-primary">Submit Request</button>
+    </div>
+  </form>
+
+  <aside class="panel summary">
+    <h3 class="sub-heading">Summary</h3>
+    <div class="big"><b>{{ days() }}</b><span>day{{ days() === 1 ? '' : 's' }} requested</span></div>
+    <dl>
+      <div><dt>Leave type</dt><dd>{{ type() || '—' }}</dd></div>
+      <div><dt>Available</dt><dd>{{ type() ? left() : '—' }}</dd></div>
+      <div><dt>Balance after</dt><dd [class.neg]="type() && left() - days() < 0">{{ type() ? left() - days() : '—' }}</dd></div>
+      <div><dt>Dates</dt><dd>{{ from() ? (from() | date: 'd MMM') : '—' }}{{ to() && to() !== from() ? ' – ' + (to() | date: 'd MMM y') : '' }}</dd></div>
+    </dl>
+    @if (clash(); as c) {
+      <p class="warn"><i class="fa-solid fa-triangle-exclamation"></i>Overlaps your {{ c.type }} ({{ c.status }}) from {{ c.from | date: 'd MMM' }} to {{ c.to | date: 'd MMM' }}.</p>
+    }
+    <p class="foot">Weekends are excluded. Half-day sessions count as 0.5 days.</p>
+  </aside>
+</div>

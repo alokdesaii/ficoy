@@ -1,0 +1,41 @@
+<ng-template #tree let-nodes>
+  <ul>
+    @for (n of nodes; track n.e.code) {
+      <li>
+        <div class="node" [class.root]="!n.e.manager">
+          <a class="node-body" [routerLink]="['/employeeview', n.e.code]" [title]="'View ' + n.e.name">
+            <span class="avatar">{{ initials(n.e.name) }}</span>
+            <span class="name">{{ n.e.name }}</span>
+            <span class="role">{{ n.e.designation }}</span>
+          </a>
+          @if (n.children.length) {
+            <button class="toggle" (click)="toggle(n.e.name)" [attr.aria-expanded]="!collapsed().has(n.e.name)"
+                    [attr.aria-label]="(collapsed().has(n.e.name) ? 'Expand ' : 'Collapse ') + n.e.name">
+              <i class="fa-solid" [class.fa-chevron-down]="collapsed().has(n.e.name)" [class.fa-chevron-up]="!collapsed().has(n.e.name)"></i>
+              {{ n.children.length }}
+            </button>
+          }
+        </div>
+        @if (n.children.length && !collapsed().has(n.e.name)) {
+          <ng-container *ngTemplateOutlet="tree; context: { $implicit: n.children }" />
+        }
+      </li>
+    }
+  </ul>
+</ng-template>
+
+<div class="page-head">
+  <h2 class="page-main-heading">Organisation Chart</h2>
+  <div class="tools">
+    <button class="btn-table t-blue" (click)="setZoom(-0.1)" [disabled]="zoom() <= 0.5" aria-label="Zoom out" title="Zoom out"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
+    <span class="zoom">{{ (zoom() * 100).toFixed(0) }}%</span>
+    <button class="btn-table t-blue" (click)="setZoom(0.1)" [disabled]="zoom() >= 1.5" aria-label="Zoom in" title="Zoom in"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
+    <button class="btn btn-cancel" (click)="reset()"><i class="fa-solid fa-arrows-rotate"></i>Reset</button>
+  </div>
+</div>
+
+<div class="panel canvas">
+  <div class="chart" [style.zoom]="zoom()">
+    <ng-container *ngTemplateOutlet="tree; context: { $implicit: roots() }" />
+  </div>
+</div>
