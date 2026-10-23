@@ -3,6 +3,7 @@ import { LoginComponent } from './login/login.component';
 import { LayoutComponent } from './layout/layout.component';
 
 export const routes: Routes = [
+  { path: '', redirectTo: 'login', pathMatch: 'full' },
   { path: 'login', component: LoginComponent },
   {
     path: '',
@@ -54,6 +55,5 @@ export const routes: Routes = [
       { path: 'shifttiming', loadComponent: () => import('./shift-timing/shift-timing.component').then(m => m.ShiftTimingComponent), title: 'Shift Timing' },
     ],
   },
-  { path: '', redirectTo: 'login', pathMatch: 'full' },
   { path: '**', redirectTo: 'home' },
 ];
