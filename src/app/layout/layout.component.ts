@@ -70,7 +70,7 @@ export class LayoutComponent {
     // ponytail: probation pages are added here as each phase ships
     { label: 'Probation', icon: '', fa: 'fa-solid fa-user-clock', children: [
       { label: 'Probation Dashboard', link: '/probation' },
-      { label: 'My Probation', link: '/probation/me', soon: true },
+      { label: 'My Probation', link: '/probation/me' },
       { label: 'Probation List', link: '/probation/list', soon: true },
       { label: 'PIP List', link: '/probation/pip', soon: true },
       { label: 'Letter Templates', link: '/probation/letters', soon: true },
