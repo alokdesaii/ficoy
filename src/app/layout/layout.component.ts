@@ -71,7 +71,7 @@ export class LayoutComponent {
     { label: 'Probation', icon: '', fa: 'fa-solid fa-user-clock', children: [
       { label: 'Probation Dashboard', link: '/probation' },
       { label: 'My Probation', link: '/probation/me' },
-      { label: 'Probation List', link: '/probation/list', soon: true },
+      { label: 'Probation List', link: '/probation/list' },
       { label: 'PIP List', link: '/probation/pip', soon: true },
       { label: 'Letter Templates', link: '/probation/letters', soon: true },
       { label: 'Notification Designs', link: '/probation/notification-designs', soon: true },
