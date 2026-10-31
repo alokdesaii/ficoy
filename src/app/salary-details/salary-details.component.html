@@ -31,6 +31,13 @@
   <div class="panel">
     <h3 class="sub-heading">Monthly Salary Breakup</h3>
 
+    <div class="field mb-3">
+      <label class="form-label" for="effective">Effective From<span class="req">*</span></label>
+      <input id="effective" class="form-control" type="date" [ngModel]="effective()" (ngModelChange)="effective.set($event)"
+             [class.is-invalid]="submitted() && !effective()" />
+      @if (submitted() && !effective()) { <div class="invalid-feedback d-block">Effective date is required</div> }
+    </div>
+
     <div class="field">
       <label class="form-label" for="basic">Basic Salary<span class="req">*</span></label>
       <div class="money">
@@ -69,5 +76,5 @@
 <div class="form-actions">
   @if (submitted() && invalid) { <span class="err">Fix the highlighted fields to continue</span> }
   <a [routerLink]="['/employeeedit', e?.code]" class="btn btn-cancel">Cancel</a>
-  <button type="button" class="btn btn-primary" (click)="save()">Update Salary Details</button>
+  <button type="button" class="btn btn-primary" (click)="save()">Save Salary Revision</button>
 </div>

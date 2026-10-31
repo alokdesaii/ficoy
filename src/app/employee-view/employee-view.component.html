@@ -55,6 +55,14 @@
       </ul>
     </div>
   </div>
+
+  <div class="panel salary">
+    <div class="salary-head">
+      <h3 class="sub-heading">Salary Timeline</h3>
+      <a [routerLink]="['/updatesalarydetails', e.code]" class="btn btn-primary"><i class="fa-solid fa-plus"></i>Add Salary Revision</a>
+    </div>
+    <app-salary-timeline [code]="e.code" />
+  </div>
 } @else {
   <div class="panel empty">Employee not found. <a routerLink="/employeelist">Back to list</a></div>
 }

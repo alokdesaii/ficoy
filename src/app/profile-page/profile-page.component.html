@@ -27,7 +27,8 @@
     { k: 'personal', t: 'Personal Information', i: 'fa-regular fa-user' },
     { k: 'company', t: 'Company Information', i: 'fa-solid fa-briefcase' },
     { k: 'address', t: 'Address Information', i: 'fa-solid fa-location-dot' },
-    { k: 'identity', t: 'Identity Information', i: 'fa-regular fa-id-card' }
+    { k: 'identity', t: 'Identity Information', i: 'fa-regular fa-id-card' },
+    { k: 'salary', t: 'My Salary', i: 'fa-solid fa-arrow-trend-up' }
   ]; track sec.k) {
     <section class="acc" [class.open]="open().has(sec.k)">
       <button class="acc-head" (click)="toggle(sec.k)" [attr.aria-expanded]="open().has(sec.k)">
@@ -86,6 +87,7 @@
                 } @empty { <p class="muted">No ID documents uploaded yet.</p> }
               </div>
             }
+            @case ('salary') { <app-salary-timeline [code]="e().code" /> }
           }
         </div>
       }

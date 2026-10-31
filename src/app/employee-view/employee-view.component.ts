@@ -2,10 +2,11 @@ import { Component, inject } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { findEmployee } from '../employees';
+import { SalaryTimelineComponent } from '../salary-timeline/salary-timeline.component';
 
 @Component({
   selector: 'app-employee-view',
-  imports: [RouterLink, DatePipe],
+  imports: [RouterLink, DatePipe, SalaryTimelineComponent],
   templateUrl: './employee-view.component.html',
   styleUrl: './employee-view.component.scss',
 })

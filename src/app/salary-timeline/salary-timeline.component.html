@@ -1,0 +1,37 @@
+<ol class="timeline">
+  @for (r of revisions(); track r.effective) {
+    <li>
+      <span class="dot"><i class="fa-solid fa-arrow-trend-up"></i></span>
+      <div class="rev-title">
+        <b>{{ $last ? 'Joining Salary' : 'Salary Revision' }}</b>
+        <span>Effective {{ r.effective | date: 'd MMM y' }}</span>
+        @if (r === current()) { <span class="tag cur">Current</span> }
+        @if (r.effective > today) { <span class="tag sched">Scheduled</span> }
+      </div>
+      <div class="rev-card">
+        <button type="button" class="sum" (click)="toggle(r.effective)" [attr.aria-expanded]="open() === r.effective">
+          <i class="fa-solid fa-angle-right caret"></i>
+          <span class="fig"><small>Basic</small>HK$ {{ r.basic | number }}</span>
+          <span class="op">+</span>
+          <span class="fig"><small>Allowances</small>HK$ {{ sumLines(r.earnings) | number }}</span>
+          <span class="op">−</span>
+          <span class="fig"><small>Deductions</small>HK$ {{ sumLines(r.deductions) | number }}</span>
+          <span class="op">=</span>
+          <span class="fig total"><small>Net Monthly</small>HK$ {{ net(r) | number }}</span>
+          <span class="more">{{ open() === r.effective ? 'Hide' : 'View' }} breakdown</span>
+        </button>
+        @if (open() === r.effective) {
+          <dl class="breakdown">
+            <dt>Basic Salary</dt><dd>HK$ {{ r.basic | number: '1.2-2' }}</dd>
+            @for (l of r.earnings; track l.type) { <dt>{{ l.type }}</dt><dd>HK$ {{ l.amount | number: '1.2-2' }}</dd> }
+            <dt class="sub">Gross Earnings</dt><dd class="sub">HK$ {{ gross(r) | number: '1.2-2' }}</dd>
+            @for (l of r.deductions; track l.type) { <dt>{{ l.type }}</dt><dd class="neg">− HK$ {{ l.amount | number: '1.2-2' }}</dd> }
+            <dt class="sub">Net Monthly</dt><dd class="sub">HK$ {{ net(r) | number: '1.2-2' }}</dd>
+          </dl>
+        }
+      </div>
+    </li>
+  } @empty {
+    <li class="empty">No salary on record yet.</li>
+  }
+</ol>

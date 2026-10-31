@@ -3,11 +3,12 @@ import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { employees } from '../employees';
 import { CURRENT_USER } from '../leaves';
+import { SalaryTimelineComponent } from '../salary-timeline/salary-timeline.component';
 import { ID_TYPES, IdDoc, idDocs, photo, profileExtras } from '../profile';
 
 @Component({
   selector: 'app-profile-page',
-  imports: [DatePipe, FormsModule],
+  imports: [DatePipe, FormsModule, SalaryTimelineComponent],
   templateUrl: './profile-page.component.html',
   styleUrl: './profile-page.component.scss',
 })

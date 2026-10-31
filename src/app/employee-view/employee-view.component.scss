@@ -29,5 +29,11 @@
 .doc-text { flex: 1; min-width: 0; display: flex; flex-direction: column; b { font-size: 14px; font-weight: 600; } span { color: var(--text-2); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } }
 .empty { padding: 32px 0; text-align: center; color: var(--text-2); }
 
+.salary { margin-top: 24px; }
+.salary-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; .sub-heading { margin: 0; } }
+
 @media (max-width: 991px) { .cols { grid-template-columns: 1fr; } }
+@media (max-width: 575px) {
+  .salary-head { flex-direction: column; align-items: stretch; }
+}
 @media (max-width: 575px) { .profile { flex-direction: column; align-items: flex-start; } .info { grid-template-columns: 1fr; dt { padding-bottom: 0; border: 0; } } }

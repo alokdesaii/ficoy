@@ -3,6 +3,7 @@ import { DecimalPipe, NgTemplateOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { findEmployee } from '../employees';
+import { addRevision, currentRevision } from '../salary';
 
 interface Line { type: string; amount: number | null; }
 const sum = (lines: Line[]) => lines.reduce((t, l) => t + (Number(l.amount) || 0), 0);
@@ -21,9 +22,11 @@ export class SalaryDetailsComponent {
   earningTypes = ['House Rent Allowance', 'Transport Allowance', 'Meal Allowance', 'Bonus', 'Other Earnings'];
   deductionTypes = ['Other Deductions'];
 
-  basic = signal<number | null>(32000);
-  earnings = signal<Line[]>([]);
-  deductions = signal<Line[]>([]);
+  private cur = currentRevision(this.e?.code);
+  effective = signal(new Date().toISOString().slice(0, 10));
+  basic = signal<number | null>(this.cur?.basic ?? null);
+  earnings = signal<Line[]>(this.cur?.earnings.map(l => ({ ...l })) ?? []);
+  deductions = signal<Line[]>(this.cur?.deductions.map(l => ({ ...l })) ?? []);
   mpfEligible = signal(false);
   mpfStart = signal('');
   submitted = signal(false);
@@ -40,14 +43,14 @@ export class SalaryDetailsComponent {
 
   get invalid() {
     const badLine = (l: Line) => !l.type || l.amount === null || l.amount < 0;
-    return !this.basic() || this.earnings().some(badLine) || this.deductions().some(badLine) || (this.mpfEligible() && !this.mpfStart());
+    return !this.basic() || !this.effective() || this.earnings().some(badLine) || this.deductions().some(badLine) || (this.mpfEligible() && !this.mpfStart());
   }
 
   save() {
     this.submitted.set(true);
     if (this.invalid) return;
-    // ponytail: PUT /employees/:id/salary once the endpoint is shared
-    console.log({ basic: this.basic(), earnings: this.earnings(), deductions: this.deductions(), mpf: this.mpfEligible() && this.mpfStart() });
-    this.router.navigate(['/employeeedit', this.e?.code]);
+    // ponytail: MPF flags stay local until the salary-revisions endpoint is shared
+    addRevision({ code: this.e!.code, effective: this.effective(), basic: Number(this.basic()), earnings: this.earnings(), deductions: this.deductions() });
+    this.router.navigate(['/employeeview', this.e?.code]);
   }
 }
