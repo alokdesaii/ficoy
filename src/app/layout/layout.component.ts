@@ -72,7 +72,7 @@ export class LayoutComponent {
       { label: 'Probation Dashboard', link: '/probation' },
       { label: 'My Probation', link: '/probation/me' },
       { label: 'Probation List', link: '/probation/list' },
-      { label: 'PIP List', link: '/probation/pip', soon: true },
+      { label: 'PIP List', link: '/probation/pip' },
       { label: 'Letter Templates', link: '/probation/letters', soon: true },
       { label: 'Notification Designs', link: '/probation/notification-designs', soon: true },
       { label: 'Reports', link: '/probation/reports', soon: true },
