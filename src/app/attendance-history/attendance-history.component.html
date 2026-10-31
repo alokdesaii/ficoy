@@ -51,11 +51,16 @@
               }
             </td>
             <td class="remarks">{{ r.remarks || '—' }}</td>
-            <td class="text-end">
+            <td class="text-end nowrap">
               <button class="btn-table t-blue" [disabled]="r.status === 'OnLeave'"
                       [title]="r.status === 'OnLeave' ? 'On leave — nothing to regularize' : 'Apply regularization'"
                       [attr.aria-label]="'Apply regularization for ' + r.employee + ' on ' + r.date" (click)="open(r)">
                 <i class="fa-regular fa-clock"></i>
+              </button>
+              <button class="btn-table t-green" [disabled]="!historyFor(r).length"
+                      [title]="historyFor(r).length ? 'Regularisation history' : 'No regularisation requests'"
+                      [attr.aria-label]="'Regularisation history for ' + r.employee + ' on ' + r.date" (click)="hist.set(r)">
+                <i class="fa-solid fa-clock-rotate-left"></i>
               </button>
             </td>
           </tr>
@@ -120,6 +125,33 @@
       <div class="dialog-foot">
         <button class="btn btn-cancel" (click)="reg.set(null)">Discard</button>
         <button class="btn btn-primary" (click)="submit()" [disabled]="remaining() <= 0">Submit Request</button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (hist(); as r) {
+  <div class="backdrop" (click)="hist.set(null)">
+    <div class="dialog dialog-md" role="dialog" aria-modal="true" aria-labelledby="histTitle" (click)="$event.stopPropagation()">
+      <div class="dialog-head">
+        <h4 id="histTitle">Regularisation History</h4>
+        <button class="btn-close-popup" (click)="hist.set(null)" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="dialog-body">
+        <p class="for">{{ r.employee }} · {{ r.date | date: 'dd MMM y' }}</p>
+        <table stack class="table">
+          <thead><tr><th>Status</th><th>Note</th><th>Remarks</th><th>Created On</th></tr></thead>
+          <tbody>
+            @for (h of historyFor(r); track h.id) {
+              <tr>
+                <td><span class="pill" [attr.data-s]="h.status">{{ h.status }}</span></td>
+                <td>{{ h.note }}</td>
+                <td [class.dash]="!h.adminComment">{{ h.adminComment || '—' }}</td>
+                <td class="num">{{ h.created | date: 'dd MMM y' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
       </div>
     </div>
   </div>

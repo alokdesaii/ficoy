@@ -50,7 +50,7 @@ export class AttendanceHistoryComponent {
     const r = this.reg()!;
     regularizations.update(list => [...list, {
       id: Math.max(0, ...list.map(x => x.id)) + 1, date: this.form.date, employee: r.employee,
-      checkIn: this.form.in, checkOut: this.form.out, note: this.form.note.trim(), file: this.form.file, status: 'Pending', adminComment: '',
+      checkIn: this.form.in, checkOut: this.form.out, note: this.form.note.trim(), file: this.form.file, status: 'Pending', adminComment: '', created: new Date().toISOString().slice(0, 10),
     }]);
     this.remaining.update(n => n - 1);
     this.reg.set(null);
@@ -60,6 +60,11 @@ export class AttendanceHistoryComponent {
     this.form.file = f && f.size <= 5 * 1024 * 1024 ? f.name : '';
     if (f && !this.form.file) alert('File must be 5MB or smaller');
   }
+
+  // regularisation history for one attendance row, newest first
+  hist = signal<AttendanceRow | null>(null);
+  historyFor = (r: AttendanceRow) => regularizations().filter(x => x.date === r.date && x.employee === r.employee)
+    .sort((a, b) => b.created.localeCompare(a.created) || b.id - a.id);
 
   export() {
     exportCsv('attendance', ['Date', 'Employee Name', 'Check-In', 'Check-Out', 'Total Hours', 'Status', 'Punctuality', 'Remarks'],

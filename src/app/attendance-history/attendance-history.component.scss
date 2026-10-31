@@ -12,8 +12,12 @@
   &[data-s='Absent'] { background: var(--bad-bg); color: var(--bad); }
   &[data-s='Half Day'] { background: var(--warn-bg); color: var(--warn); }
   &[data-s='OnLeave'] { background: var(--brand-tint); color: var(--brand-text); }
+  &[data-s='Approved'] { background: var(--ok-bg); color: var(--ok); }
+  &[data-s='Rejected'] { background: var(--bad-bg); color: var(--bad); }
+  &[data-s='Pending'] { background: var(--warn-bg); color: var(--warn); }
 }
 .tag { font-size: 12px; font-weight: 500; white-space: nowrap; &.ok { color: var(--ok); } &.warn { color: var(--warn); } }
+.btn-table + .btn-table { margin-left: 6px; }
 .btn-table:disabled { opacity: 0.35; cursor: not-allowed; }
 
 .pager {

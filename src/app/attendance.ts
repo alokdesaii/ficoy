@@ -29,18 +29,23 @@ export const hours = (r: AttendanceRow) => {
 
 export interface Regularization {
   id: number; date: string; employee: string; checkIn: string; checkOut: string;
-  note: string; file: string; status: 'Pending' | 'Approved' | 'Rejected'; adminComment: string;
+  note: string; file: string; status: 'Pending' | 'Approved' | 'Rejected'; adminComment: string; created: string;
 }
 
 // ponytail: mock requests; replace with the regularization API
 export const regularizations = signal<Regularization[]>([
-  [day(4), 'Narayan Chandra Barik', '', '', 'Missed clock-in, was at client site'],
-  [day(5), 'NC Barik', '09:05', '18:00', 'Biometric device was down'],
-  [day(5), 'NC Barik', '', '18:10', 'Forgot to clock in'],
-  [day(10), 'Suchi Thakur', '15:36', '', 'Left early for a medical appointment'],
-].map(([date, employee, checkIn, checkOut, note], i) => ({
-  id: i + 1, date, employee, checkIn, checkOut, note, file: '', adminComment: '',
-  status: i === 3 ? 'Rejected' : 'Pending',
+  [day(4), 'Narayan Chandra Barik', '', '', 'Missed clock-in, was at client site', 'Pending', '', day(3)],
+  [day(5), 'NC Barik', '09:05', '18:00', 'Biometric device was down', 'Rejected', 'Device logs show no outage', day(5)],
+  [day(5), 'NC Barik', '', '18:10', 'Forgot to clock in', 'Pending', '', day(4)],
+  [day(1), 'Pardeep Kumar', '09:00', '', 'Forgot to log out', 'Approved', 'Be careful', day(1)],
+  [day(2), 'Suchi Thakur', '09:10', '18:00', 'Stuck in traffic, reached late', 'Approved', 'Approved this once', day(2)],
+  [day(2), 'Nar Barik', '', '17:30', 'Left early', 'Rejected', 'Not acceptable', day(2)],
+  [day(2), 'Nar Barik', '', '18:00', 'Left early for a doctor visit, slip attached', 'Approved', 'Medical slip verified', day(1)],
+  [day(3), 'Test Firsteho', '09:00', '18:00', 'Biometric device did not register', 'Approved', 'Confirmed with IT', day(3)],
+  [day(6), 'TestAdmin Test', '', '', 'Working from client office', 'Rejected', 'No prior approval for offsite work', day(5)],
+  [day(10), 'Suchi Thakur', '15:36', '', 'Left early for a medical appointment', 'Rejected', 'Not acceptable', day(9)],
+].map(([date, employee, checkIn, checkOut, note, status, adminComment, created], i) => ({
+  id: i + 1, date, employee, checkIn, checkOut, note, file: '', status, adminComment, created,
 }) as Regularization));
 
 export const rowFor = (r: { date: string; employee: string }) => attendance().find(a => a.date === r.date && a.employee === r.employee);
