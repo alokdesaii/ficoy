@@ -1,8 +1,15 @@
 .sub { margin: 4px 0 0; color: var(--text-2); font-size: 13px; }
 .picker { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px;
-  button { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 14px; border: 1.5px solid transparent; border-radius: 12px; background: var(--surface); text-align: left;
-    i { margin-bottom: 6px; color: var(--brand-text); font-size: 16px; } b { color: var(--heading); font-size: 13px; } span { color: var(--text-2); font-size: 11px; line-height: 1.35; }
-    &:hover { border-color: var(--line); } &.on { border-color: var(--brand); background: var(--brand-tint); } } }
+  button { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 14px; border: 2px solid transparent; border-radius: 12px; background: var(--c-bg); text-align: left;
+    i { margin-bottom: 6px; color: var(--c-ink); font-size: 16px; } b { color: var(--heading); font-size: 13px; } span { color: var(--text-2); font-size: 11px; line-height: 1.35; }
+    &:hover { border-color: color-mix(in srgb, var(--c-ink) 35%, transparent); } &.on { border-color: var(--c-ink); box-shadow: 0 4px 12px var(--shadow-md); } }
+  // pastel per report, same tokens as the stat cards
+  button:nth-child(1) { --c-bg: var(--brand-tint); --c-ink: var(--brand-text); }
+  button:nth-child(2) { --c-bg: var(--warn-bg); --c-ink: var(--warn); }
+  button:nth-child(3) { --c-bg: var(--purple-bg); --c-ink: var(--purple-ink); }
+  button:nth-child(4) { --c-bg: var(--ok-bg); --c-ink: var(--ok); }
+  button:nth-child(5) { --c-bg: var(--bad-bg); --c-ink: var(--bad); }
+  button:nth-child(6) { --c-bg: var(--khaki-bg); --c-ink: var(--khaki-ink); } }
 
 .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 12px; }
 .filters { display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
