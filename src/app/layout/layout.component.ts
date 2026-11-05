@@ -76,7 +76,7 @@ export class LayoutComponent {
       { label: 'Letter Templates', link: '/probation/letters' },
       { label: 'Notification Designs', link: '/probation/notification-designs' },
       { label: 'Reports', link: '/probation/reports' },
-      { label: 'Probation Settings', link: '/probation/settings', soon: true },
+      { label: 'Probation Settings', link: '/probation/settings' },
     ] },
   ];
 
