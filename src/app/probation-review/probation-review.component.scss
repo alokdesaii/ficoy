@@ -42,12 +42,7 @@
 @media (max-width: 1199px) { .layout { grid-template-columns: 1fr; } .side { position: static; } }
 @media (max-width: 767px) { .crit-top { grid-template-columns: 1fr; } }
 
-// RM mode
-.self { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 4px; background: var(--bg); color: var(--text-2); font-size: 11px; font-style: normal; font-weight: 600;
-  small { font-weight: 400; } &.diff { background: var(--warn-bg); color: var(--warn); } }
 .crit-top { grid-template-columns: minmax(0, 1fr) auto 200px; }
-.self-ans { margin: 0; div { padding: 10px 0; border-top: 1px solid var(--divider); &:first-child { border-top: 0; padding-top: 0; } }
-  dt { margin-bottom: 4px; color: var(--text-2); font-size: 12px; font-weight: 500; } dd { margin: 0; font-size: 14px; line-height: 1.5; &.dash { color: var(--muted); } } }
 .note-info { display: flex; gap: 8px; margin: 0; padding: 12px; border-radius: 8px; background: var(--brand-tint); color: var(--brand-text); font-size: 13px; i { margin-top: 2px; }
   &.warn { margin-top: 16px; background: var(--warn-bg); color: var(--warn); } }
 .hint { margin: -8px 0 16px; color: var(--text-2); font-size: 13px; }
@@ -65,3 +60,11 @@
 textarea.form-control { height: auto; }
 .cmp { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; font-size: 13px; span { color: var(--text-2); } b { color: var(--heading); } }
 @media (max-width: 767px) { .outcomes { grid-template-columns: 1fr; } .follow { flex-direction: column; .field:first-child { width: auto; } } }
+
+// Appendix F objectives block
+.obj { margin: 0 0 16px; padding: 12px 14px; border-radius: 8px; background: var(--bg);
+  div + div { margin-top: 10px; } dt { margin-bottom: 4px; color: var(--text-2); font-size: 12px; font-weight: 500; } dd { margin: 0; font-size: 14px; line-height: 1.5; white-space: pre-line; } }
+.yn { display: inline-flex; gap: 8px; margin-top: 4px; padding: 2px; border-radius: 8px;
+  button { min-width: 72px; height: 36px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); font-weight: 500;
+    &.on { border-color: var(--brand); background: var(--brand-tint); color: var(--brand-text); } &:disabled { cursor: default; } }
+  &.err button { border-color: var(--danger); } }

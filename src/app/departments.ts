@@ -7,10 +7,10 @@ export const LOCATIONS = ['Hong Kong', 'India', 'USA', 'Australia'];
 // ponytail: in-memory mock mirroring UAT; replace with a DepartmentService over the API
 export const departments = signal<Department[]>([
   [2, 'Human Resources', 'Suchi Thakur', 'India'],
-  [4, 'IT', '', 'USA'],
+  [4, 'IT', 'Narayan Chandra Barik', 'USA'],
   [5, 'Sales', '', 'Australia'],
   [6, 'Operations', '', 'USA'],
-  [29, 'Test', '', 'Hong Kong'],
+  [29, 'Test', 'Pardeep Kumar', 'Hong Kong'],
   [31, 'Payments', '', 'Hong Kong'],
   [32, 'TestHK', '', 'Hong Kong'],
   [33, 'ADMIN HR', 'Suchi Thakur', 'Hong Kong'],

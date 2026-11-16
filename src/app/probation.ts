@@ -1,10 +1,12 @@
 import { signal } from '@angular/core';
+import { departments } from './departments';
+import { employees } from './employees';
 
 // ── settings ─────────────────────────────────────────────────────────────
 // ponytail: every default below is a placeholder answer to the HR query sheet
 // (modules/probation/probation_work_flow_query.xlsx); swap for GET/PUT /probation/settings
 export const EMPLOYMENT_TYPES = ['Full Time', 'Part Time', 'Contract'];
-export const ROLES = ['Employee', 'RM', 'HR', 'Payroll'] as const;
+export const ROLES = ['Employee', 'RM', 'HOD', 'HR', 'Payroll'] as const;
 export type Role = typeof ROLES[number];
 
 export const EVENTS = [
@@ -16,12 +18,9 @@ export const EVENTS = [
   { key: 'confirmed', label: 'Confirmed' },
   { key: 'extended', label: 'Extended' },
   { key: 'terminated', label: 'Terminated' },
-  { key: 'pipStarted', label: 'PIP started' },
-  { key: 'pipCheckpoint', label: 'PIP checkpoint due' },
-  { key: 'pipOutcome', label: 'PIP outcome' },
   { key: 'leaveAdjusted', label: 'Timeline adjusted for leave' },
-  { key: 'letterApproval', label: 'Letter awaiting approval' },
   { key: 'letterIssued', label: 'Letter issued' },
+  { key: 'deliveryFailed', label: 'Notification failed to deliver' },
 ] as const;
 export type EventKey = typeof EVENTS[number]['key'];
 
@@ -31,18 +30,13 @@ export interface ProbationSettings {
   reviewOpensDaysBefore: number;
   reminderDays: number[];                      // days before end date
   escalateEveryDays: number;                   // after end date, until reviews are in
-  blockDecisionUntilBothReviews: boolean;
   scale: string[];                             // labels for 1..n
   criteria: string[];
   commentRequiredAtOrBelow: number;
   confirmAtOrAbove: number;                    // average rating
   extendAtOrAbove: number;                     // below this → terminate
-  hrCanOverride: boolean;
   maxExtensions: number;
   maxExtensionMonths: number;
-  pipRequiredOnExtension: boolean;
-  pipDurationDays: number;
-  pipCheckpointEveryDays: number;
   leaveTypes: string[];                        // leave that pushes the end date
   leaveMinConsecutiveDays: number;
   leaveBasis: 'calendar' | 'working';
@@ -50,33 +44,28 @@ export interface ProbationSettings {
   channels: { inApp: boolean; email: boolean };
 }
 
-const all: Role[] = ['Employee', 'RM', 'HR'];
+const all: Role[] = ['Employee', 'RM', 'HOD', 'HR'];   // HR: HOD only when different from the RM
 export const DEFAULT_SETTINGS: ProbationSettings = {
   durations: { 'Full Time': 3, 'Part Time': 3, 'Contract': 0 },
   startOn: 'joining',
-  reviewOpensDaysBefore: 30,
-  reminderDays: [30, 15, 7],
+  reviewOpensDaysBefore: 10,
+  reminderDays: [10, 7],
   escalateEveryDays: 1,
-  blockDecisionUntilBothReviews: true,
-  scale: ['Unsatisfactory', 'Needs Improvement', 'Meets Expectations', 'Exceeds Expectations', 'Outstanding'],
-  criteria: ['Job Knowledge', 'Quality of Work', 'Productivity', 'Communication', 'Teamwork', 'Attendance & Punctuality'],
-  commentRequiredAtOrBelow: 2,
-  confirmAtOrAbove: 3.5,
-  extendAtOrAbove: 2.5,
-  hrCanOverride: true,
+  // Appendix F - Probation Objective Form
+  scale: ['Improvement Required', 'Satisfactory', 'Good', 'Excellent'],
+  criteria: ['Quality and accuracy of work', 'Efficiency', 'Attendance', 'Time keeping', 'Work relationships (teamwork and interpersonal skills)', 'Competency in the role'],
+  commentRequiredAtOrBelow: 1,
+  confirmAtOrAbove: 2,
+  extendAtOrAbove: 1.5,
   maxExtensions: 1,
   maxExtensionMonths: 3,
-  pipRequiredOnExtension: true,
-  pipDurationDays: 60,
-  pipCheckpointEveryDays: 30,
   leaveTypes: ['Leave Without Pay (LWP)', 'Sick Leave'],
   leaveMinConsecutiveDays: 5,
   leaveBasis: 'calendar',
   recipients: {
-    started: all, reminder: all, reviewOpen: all, reviewSubmitted: ['RM', 'HR'], overdue: ['RM', 'HR'],
-    confirmed: [...all, 'Payroll'], extended: [...all, 'Payroll'], terminated: [...all, 'Payroll'],
-    pipStarted: all, pipCheckpoint: all, pipOutcome: [...all, 'Payroll'], leaveAdjusted: all,
-    letterApproval: ['HR'], letterIssued: ['Employee', 'HR', 'Payroll'],
+    started: all, reminder: all, reviewOpen: all, reviewSubmitted: ['RM', 'HOD', 'HR'], overdue: ['RM', 'HOD', 'HR'],
+    confirmed: all, extended: all, terminated: [],          // HR: no notifications for termination
+    leaveAdjusted: all, letterIssued: ['Employee', 'HR'], deliveryFailed: ['HR'],
   },
   channels: { inApp: true, email: true },
 };
@@ -100,10 +89,9 @@ export function probationEnd(joined: string, months: number) {
 export const daysBetween = (a: string, b: string) => Math.round((+parse(b) - +parse(a)) / 864e5);
 
 // ── records ──────────────────────────────────────────────────────────────
-export type Outcome = 'Confirmed' | 'Terminated';
+export type Outcome = 'Confirmed' | 'Terminated' | 'Closed';   // Closed = employee left during probation
 export interface Decision {
   outcome: Recommendation; effectiveOn: string; decidedOn: string; by: string;
-  rmRecommendation?: Recommendation; overrideReason?: string;
   extendMonths?: number; lastWorkingDay?: string; reason?: string; note?: string;
 }
 export interface Probation {
@@ -111,22 +99,28 @@ export interface Probation {
   decisions?: Decision[];
   type: string;                      // employment type
   outcome?: Outcome; decidedOn?: string;
-  extendedTo?: string; pip?: boolean;
-  employeeReviewOn?: string; rmReviewOn?: string;
+  extendedTo?: string;
+  rmReviewOn?: string;
+  reviewer?: string;                 // set when HR hands the review to the HOD
+  initial?: InitialMeeting;          // Appendix F Part 1
+  ackOn?: string;                    // employee acknowledged the RM review (form sign-off)
+  exitOn?: string; exitReason?: string;
 }
-export type Stage = 'In Probation' | 'Review Due' | 'Overdue' | 'Extended · PIP' | 'Confirmed' | 'Terminated';
+export interface InitialMeeting { objectives: string; development: string; on: string; by: string; }
+export const INITIAL_MEETING_DAYS = 7;   // People SOP 8.3: within 1 week of starting
+export type Stage = 'In Probation' | 'Review Due' | 'Overdue' | 'Extended' | 'Confirmed' | 'Terminated' | 'Closed';
 
 // ponytail: mock records keyed by employee; replace with GET /probations
 export const probations = signal<Probation[]>([
   { employee: 'Suchi Thakur', type: 'Full Time', outcome: 'Confirmed', decidedOn: '2025-04-08' },
-  { employee: 'Pardeep Kumar', type: 'Full Time', extendedTo: '2026-10-31', pip: true, employeeReviewOn: '2026-07-10', rmReviewOn: '2026-07-14' },
-  { employee: 'Narayan Chandra Barik', type: 'Full Time', employeeReviewOn: '2026-10-05' },
+  { employee: 'Pardeep Kumar', type: 'Full Time', initial: { objectives: 'Deliver sprint commitments on time\nReview pull requests within 1 working day', development: 'Code review workshop', on: '2026-04-24', by: 'Suchi Thakur' }, extendedTo: '2026-10-31', decisions: [{ outcome: 'Extend', effectiveOn: '2026-07-19', decidedOn: '2026-07-16', by: 'Suchi Thakur', extendMonths: 3, reason: 'Delivery and review turnaround below expectations' }] },
+  { employee: 'Narayan Chandra Barik', type: 'Full Time', initial: { objectives: 'Ship the leave module API end to end\nClose 90% of sprint tickets on time', development: 'Angular and NestJS onboarding course; pair with Pardeep for the first month', on: '2026-07-30', by: 'Suchi Thakur' } },
   { employee: 'NC Barik', type: 'Full Time' },
   { employee: 'Nar Barik', type: 'Full Time' },
-  { employee: 'Test Firsteho', type: 'Part Time', employeeReviewOn: '2026-10-12' },
-  { employee: 'Test Firsteru', type: 'Full Time', outcome: 'Terminated', decidedOn: '2026-06-01', employeeReviewOn: '2026-05-20', rmReviewOn: '2026-05-25' },
-  { employee: 'TestAdmin Test', type: 'Full Time' },
-  { employee: 'TestEmployee TestLastName', type: 'Full Time', outcome: 'Confirmed', decidedOn: '2026-09-15', employeeReviewOn: '2026-09-01', rmReviewOn: '2026-09-04' },
+  { employee: 'Test Firsteho', type: 'Part Time' },
+  { employee: 'Test Firsteru', type: 'Full Time', outcome: 'Terminated', decidedOn: '2026-06-01', rmReviewOn: '2026-05-25', initial: { objectives: 'Process payroll inputs by the 20th each month', development: 'Payroll system training', on: '2026-03-06', by: 'Narayan Chandra Barik' } },
+  { employee: 'TestAdmin Test', type: 'Full Time', initial: { objectives: 'Own user access requests within 1 working day\nDocument the admin runbook', development: 'Security awareness training', on: '2026-10-06', by: 'Narayan Chandra Barik' } },
+  { employee: 'TestEmployee TestLastName', type: 'Full Time', outcome: 'Confirmed', decidedOn: '2026-09-15', rmReviewOn: '2026-09-04', ackOn: '2026-09-05', initial: { objectives: 'Run the onboarding checklist for new joiners', development: 'HRMS admin training', on: '2026-06-19', by: 'Narayan Chandra Barik' } },
 ]);
 
 export interface LeaveLike { employee: string; type: string; from: string; to: string; status: string; }
@@ -151,34 +145,47 @@ export function timeline(p: Probation, joined: string, leaves: LeaveLike[], s: P
   const adjustedEnd = addDays(baseEnd, adj.days);
   const end = p.extendedTo ?? adjustedEnd;
   const reviewOpens = addDays(end, -s.reviewOpensDaysBefore);
-  const stage: Stage = p.outcome ?? (p.extendedTo ? 'Extended · PIP' : today < reviewOpens ? 'In Probation' : today <= end ? 'Review Due' : 'Overdue');
+  const stage: Stage = p.outcome ?? (today < reviewOpens ? (p.extendedTo ? 'Extended' : 'In Probation') : today <= end ? 'Review Due' : 'Overdue');
   const total = Math.max(1, daysBetween(joined, end) + 1);
   const elapsed = Math.min(total, Math.max(0, daysBetween(joined, today) + 1));
   return { start: joined, baseEnd, adjustedEnd, end, reviewOpens, adj, stage, daysLeft: daysBetween(today, end), progress: elapsed / total, exempt: !months };
 }
 
 // ── milestones, notifications, audit ─────────────────────────────────────
-export interface Milestone { date: string; label: string; kind: 'start' | 'reminder' | 'review' | 'submitted' | 'leave' | 'end' | 'extension' | 'outcome'; event?: EventKey; done: boolean; note?: string; }
+export interface Milestone { date: string; label: string; kind: 'start' | 'meeting' | 'reminder' | 'review' | 'submitted' | 'leave' | 'end' | 'extension' | 'outcome'; event?: EventKey; done: boolean; note?: string; }
 
 // everything that has happened / will happen, in date order; notification events are attached where one is sent
 export function milestones(p: Probation, t: ReturnType<typeof timeline>, s: ProbationSettings, today: string): Milestone[] {
   const m: Milestone[] = [{ date: t.start, label: 'Probation started', kind: 'start', event: 'started', done: true }];
   for (const l of t.adj.items) m.push({ date: l.to, label: `${l.type} · ${l.days} day${l.days === 1 ? '' : 's'} added`, kind: 'leave', event: 'leaveAdjusted', done: l.to <= today });
   const closed = !!p.outcome;
-  const base = p.extendedTo ? t.adjustedEnd : t.end;               // first review cycle runs against the pre-extension end
-  for (const n of s.reminderDays) { const d = addDays(base, -n); if (d >= t.start) m.push({ date: d, label: `Reminder · ${n} days before end`, kind: 'reminder', event: 'reminder', done: d <= today || closed }); }
-  m.push({ date: addDays(base, -s.reviewOpensDaysBefore), label: 'Reviews opened', kind: 'review', event: 'reviewOpen', done: addDays(base, -s.reviewOpensDaysBefore) <= today || closed });
-  if (p.employeeReviewOn) m.push({ date: p.employeeReviewOn, label: 'Self review submitted', kind: 'submitted', event: 'reviewSubmitted', done: true });
-  if (p.rmReviewOn) m.push({ date: p.rmReviewOn, label: 'RM review submitted', kind: 'submitted', event: 'reviewSubmitted', done: true });
-  m.push({ date: base, label: p.extendedTo ? 'Original end date' : 'Probation ends', kind: 'end', done: base <= today || closed });
+  const due = addDays(t.start, INITIAL_MEETING_DAYS - 1);
+  m.push(p.initial ? { date: p.initial.on, label: 'Initial meeting · objectives set', kind: 'meeting', done: true, note: `by ${p.initial.by}` }
+    : { date: due, label: 'Initial meeting due · objectives and development plan', kind: 'meeting', done: closed });
+  // one RM review cycle per end date; an extension runs a second cycle against the new end
+  const cycle = (end: string, current: boolean) => {
+    for (const n of s.reminderDays) { const d = addDays(end, -n); if (d >= t.start) m.push({ date: d, label: `Reminder · ${n} days before end`, kind: 'reminder', event: 'reminder', done: d <= today || closed || !current }); }
+    const open = addDays(end, -s.reviewOpensDaysBefore);
+    m.push({ date: open, label: 'RM review opened', kind: 'review', event: 'reviewOpen', done: open <= today || closed || !current });
+  };
+  cycle(t.adjustedEnd, !p.extendedTo);
+  m.push({ date: t.adjustedEnd, label: p.extendedTo ? 'Original end date' : 'Probation ends', kind: 'end', done: t.adjustedEnd <= today || closed });
   if (p.extendedTo) {
-    m.push({ date: addDays(base, 1), label: 'Extended with PIP', kind: 'extension', event: 'extended', done: true, note: `New end ${p.extendedTo}` });
-    m.push({ date: p.extendedTo, label: 'Extended probation ends', kind: 'end', done: p.extendedTo <= today });
+    const ext = p.decisions?.find(d => d.outcome === 'Extend');
+    m.push({ date: addDays(t.adjustedEnd, 1), label: 'Probation extended', kind: 'extension', event: 'extended', done: true, note: `New end ${p.extendedTo}${ext?.extendMonths ? ` · ${ext.extendMonths} month(s)` : ''}` });
+    cycle(p.extendedTo, true);
+    m.push({ date: p.extendedTo, label: 'Extended probation ends', kind: 'end', done: p.extendedTo <= today || closed });
   }
-  if (p.outcome) m.push({ date: p.decidedOn!, label: p.outcome, kind: 'outcome', event: p.outcome === 'Confirmed' ? 'confirmed' : 'terminated', done: true });
-  if (!closed && t.daysLeft < 0) m.push({ date: today, label: `Overdue · escalated to HR every ${s.escalateEveryDays} day(s)`, kind: 'review', event: 'overdue', done: true });
+  if (p.rmReviewOn) m.push({ date: p.rmReviewOn, label: 'RM review submitted', kind: 'submitted', event: 'reviewSubmitted', done: true });
+  if (p.ackOn) m.push({ date: p.ackOn, label: 'Employee acknowledged the review', kind: 'submitted', done: true });
+  if (p.outcome) m.push({ date: p.decidedOn!, label: p.outcome === 'Closed' ? `Closed · employee exit on ${p.exitOn}` : p.outcome, kind: 'outcome', event: p.outcome === 'Confirmed' ? 'confirmed' : p.outcome === 'Terminated' ? 'terminated' : undefined, done: true, note: p.exitReason });
+  if (!closed && t.daysLeft < 0) m.push({ date: today, label: `Overdue · RM reminded every ${s.escalateEveryDays === 1 ? 'day' : s.escalateEveryDays + ' days'}, HR escalates by email`, kind: 'review', event: 'overdue', done: true });
   return m.sort((a, b) => a.date.localeCompare(b.date));
 }
+
+// ponytail: mock bounce — reminders to a non-company mailbox fail; replace with delivery status from the mail API
+export const deliveryFailed = (p: Probation, m: Milestone) =>
+  m.event === 'reminder' && !employees().find(e => e.name === p.employee)?.email.endsWith('@harbourandhills.com');
 
 export interface LogEntry { employee: string; at: string; by: string; action: string; }
 // ponytail: manual actions (resends etc.); system events are derived from milestones until the API returns a real audit log
@@ -188,7 +195,7 @@ export function log(employee: string, by: string, action: string) {
 }
 
 // ── reviews ──────────────────────────────────────────────────────────────
-export type ReviewBy = 'self' | 'rm';
+export type ReviewBy = 'rm';                // HR: no self assessment for probation
 export type Recommendation = 'Confirm' | 'Extend' | 'Terminate';
 export interface Review {
   employee: string; by: ReviewBy;
@@ -196,33 +203,28 @@ export interface Review {
   notes: Record<string, string>;            // criterion → comment
   answers: Record<string, string>;          // open questions
   recommendation?: Recommendation;          // RM only
-  extendMonths?: number; pipFocus?: string; reason?: string; // RM only, depending on recommendation
+  extendMonths?: number; extensionFocus?: string; reason?: string; // depending on recommendation
+  objectivesMet?: 'Yes' | 'No';
   savedAt?: string; submittedOn?: string;
 }
-export const SELF_QUESTIONS = [
-  { key: 'achievements', label: 'Key achievements during probation', required: true },
-  { key: 'challenges', label: 'Challenges you faced and how you handled them', required: true },
-  { key: 'support', label: 'Support or training you need', required: false },
-  { key: 'goals', label: 'Goals for the next 6 months', required: true },
-];
-
+// Appendix F Part 2/3; 'improve' is required once any area is rated at the lowest level, 'action' when objectives were not met
 export const RM_QUESTIONS = [
-  { key: 'strengths', label: 'Strengths observed during probation', required: true },
-  { key: 'improve', label: 'Areas that need improvement', required: true },
+  { key: 'improve', label: 'Where performance, conduct or attendance needs improvement: details, and how it will be addressed', required: false },
+  { key: 'action', label: 'If the objectives were not met, what further action is required?', required: false },
 ];
 // rating average → suggested outcome, from the Settings thresholds
 export const suggest = (avg: number, s: Pick<ProbationSettings, 'confirmAtOrAbove' | 'extendAtOrAbove'>): Recommendation =>
   avg >= s.confirmAtOrAbove ? 'Confirm' : avg >= s.extendAtOrAbove ? 'Extend' : 'Terminate';
 
 // ponytail: mock submitted reviews matching the probation records; replace with GET/PUT /probations/:id/reviews
-const filled = (n: number, crit: string[]) => Object.fromEntries(crit.map((c, i) => [c, Math.max(1, Math.min(5, n + (i % 2 ? 0 : 1) - (i === 3 ? 1 : 0)))]));
+const filled = (n: number, crit: string[]) => Object.fromEntries(crit.map((c, i) => [c, Math.max(1, Math.min(4, n + (i % 2 ? 0 : 1) - (i === 3 ? 1 : 0)))]));
 export const reviews = signal<Review[]>([
-  ['Narayan Chandra Barik', 'self', 4, '2026-10-05'], ['Pardeep Kumar', 'self', 3, '2026-07-10'], ['Pardeep Kumar', 'rm', 2, '2026-07-14'],
-  ['Test Firsteho', 'self', 4, '2026-10-12'], ['TestEmployee TestLastName', 'self', 4, '2026-09-01'], ['TestEmployee TestLastName', 'rm', 4, '2026-09-04'],
+  ['Test Firsteru', 'rm', 1, '2026-05-25'], ['TestEmployee TestLastName', 'rm', 3, '2026-09-04'],
 ].map(([employee, by, n, submittedOn]) => ({
   employee: employee as string, by: by as ReviewBy, ratings: filled(n as number, DEFAULT_SETTINGS.criteria), notes: {},
-  answers: { achievements: 'Delivered assigned work on time and took over two additional modules.', challenges: 'Ramp-up on internal tools; paired with a senior colleague.', support: '', goals: 'Lead one module end to end.' },
-  recommendation: by === 'rm' ? ((n as number) >= 4 ? 'Confirm' : 'Extend') : undefined, submittedOn: submittedOn as string,
+  answers: (n as number) >= 3 ? {} as Record<string, string> : { improve: 'Repeated late arrivals and missed deadlines despite two discussions.', action: 'Not confirmed.' },
+  objectivesMet: (n as number) >= 3 ? 'Yes' as const : 'No' as const,
+  recommendation: (n as number) >= 3 ? 'Confirm' : (n as number) >= 2 ? 'Extend' : 'Terminate', submittedOn: submittedOn as string,
 })));
 export const reviewOf = (employee: string, by: ReviewBy) => reviews().find(r => r.employee === employee && r.by === by);
 export const average = (r: Pick<Review, 'ratings'>, criteria: string[]) => {
@@ -233,12 +235,12 @@ export function saveReview(r: Review, submit: boolean) {
   const now = new Date().toISOString();
   const next: Review = { ...r, savedAt: now, submittedOn: submit ? now.slice(0, 10) : r.submittedOn };
   reviews.update(list => [...list.filter(x => !(x.employee === r.employee && x.by === r.by)), next]);
-  if (submit) probations.update(list => list.map(p => p.employee !== r.employee ? p : { ...p, [r.by === 'self' ? 'employeeReviewOn' : 'rmReviewOn']: next.submittedOn }));
+  if (submit) probations.update(list => list.map(p => p.employee !== r.employee ? p : { ...p, rmReviewOn: next.submittedOn }));
   return next;
 }
 
 
-// ── HR decision ──────────────────────────────────────────────────────────
+// ── decision: the RM's submitted review is the decision (HR: RM is the final authority) ──
 export function extendTo(currentEnd: string, months: number) { return probationEnd(addDays(currentEnd, 1), months); }
 
 // ponytail: POST /probations/:id/decision once the endpoint is shared
@@ -247,72 +249,44 @@ export function decide(employee: string, d: Decision) {
     if (p.employee !== employee) return p;
     const decisions = [...(p.decisions ?? []), d];
     if (d.outcome === 'Extend') {
-      const end = extendTo(d.effectiveOn, d.extendMonths!);
-      if (probationSettings().pipRequiredOnExtension)
-        createPip(employee, addDays(d.effectiveOn, 1), end, reviewOf(employee, 'rm')?.pipFocus, probationSettings().pipCheckpointEveryDays);
-      return { ...p, decisions, extendedTo: end, pip: true };
+      // the RM reviews again before the new end date; the first review stays on the decision record
+      reviews.update(l => l.map(r => r.employee === employee ? { ...r, submittedOn: undefined, recommendation: undefined } : r));
+      return { ...p, decisions, extendedTo: extendTo(d.effectiveOn, d.extendMonths!), rmReviewOn: undefined };
     }
     return { ...p, decisions, outcome: d.outcome === 'Confirm' ? 'Confirmed' : 'Terminated', decidedOn: d.decidedOn };
   }));
 }
 
-// ── PIP ──────────────────────────────────────────────────────────────────
-export interface PipObjective { title: string; measure: string; status: 'Not started' | 'On track' | 'At risk' | 'Met' | 'Not met'; }
-export interface PipCheckIn { due: string; selfOn?: string; selfNote?: string; rmOn?: string; rmRating?: number; rmNote?: string; }
-export interface Pip {
-  employee: string; start: string; end: string;
-  objectives: PipObjective[]; objectivesApprovedOn?: string;
-  checkIns: PipCheckIn[];
-  outcome?: 'Confirmed' | 'Terminated'; decidedOn?: string;
-}
-export type PipStage = 'Awaiting Objectives' | 'Active' | 'Check-in Due' | 'Outcome Due' | 'Confirmed' | 'Terminated';
+// effective dates from the HR answers: confirm = day after the end date, terminate = immediately, extend runs from the end date
+export function effectiveFor(o: Recommendation, end: string, today: string) { return o === 'Confirm' ? addDays(end, 1) : o === 'Terminate' ? today : end; }
 
-// check-ins every N days from the start; the last one falls on the PIP end
-export function checkInDates(start: string, end: string, every: number) {
-  const out: string[] = [];
-  for (let d = addDays(start, every - 1); d < end; d = addDays(d, every)) out.push(d);
-  out.push(end);
-  return out;
+// the RM on the profile reviews; HR can hand it to the department head when the RM is unavailable
+export const hodOf = (employee: string) => departments().find(d => d.name === employees().find(e => e.name === employee)?.department)?.head || '';
+export const reviewerOf = (p: Probation) => p.reviewer || employees().find(e => e.name === p.employee)?.manager || '';
+
+export function assignToHod(employee: string, by: string, why: string) {
+  const hod = hodOf(employee);
+  probations.update(l => l.map(p => p.employee === employee ? { ...p, reviewer: hod } : p));
+  log(employee, by, `Review reassigned to HOD ${hod} · ${why}`);
 }
 
-export function pipStage(p: Pip, today: string): PipStage {
-  if (p.outcome) return p.outcome;
-  if (!p.objectivesApprovedOn) return 'Awaiting Objectives';
-  if (today >= p.end) return 'Outcome Due';
-  return p.checkIns.some(c => c.due <= today && !c.rmOn) ? 'Check-in Due' : 'Active';
+// HR corrects a decision: back to the RM review, audit kept; an extension's new end date is not changed
+export function reopen(employee: string, by: string, why: string) {
+  probations.update(l => l.map(p => p.employee !== employee ? p : { ...p, outcome: undefined, decidedOn: undefined, rmReviewOn: undefined, ackOn: undefined, exitOn: undefined, exitReason: undefined }));
+  reviews.update(l => l.map(r => r.employee === employee ? { ...r, submittedOn: undefined } : r));
+  log(employee, by, `Reopened for correction · ${why}`);
 }
 
-export function createPip(employee: string, start: string, end: string, focus: string | undefined, every: number) {
-  const objectives: PipObjective[] = (focus ?? '').split(/\n|;/).map(t => t.trim()).filter(Boolean)
-    .map(title => ({ title, measure: '', status: 'Not started' }));
-  pips.update(l => [...l.filter(x => x.employee !== employee), { employee, start, end, objectives, checkIns: checkInDates(start, end, every).map(due => ({ due })) }]);
+export function setInitialMeeting(employee: string, m: InitialMeeting) {
+  probations.update(l => l.map(p => p.employee === employee ? { ...p, initial: m } : p));
+  log(employee, m.by, 'Initial meeting recorded · objectives and development plan set');
+}
+export function acknowledge(employee: string, on: string) {
+  probations.update(l => l.map(p => p.employee === employee ? { ...p, ackOn: on } : p));
+  log(employee, employee, 'Acknowledged the probation review');
 }
 
-// ponytail: mock PIP for the extended probation; replace with GET /pips
-export const pips = signal<Pip[]>([{
-  employee: 'Pardeep Kumar', start: '2026-07-20', end: '2026-10-31',
-  objectives: [
-    { title: 'Deliver sprint commitments on time', measure: '90% of tickets closed within the sprint', status: 'On track' },
-    { title: 'Improve code review turnaround', measure: 'Reviews completed within 1 working day', status: 'At risk' },
-    { title: 'Document the payments module', measure: 'Runbook reviewed and approved by RM', status: 'Met' },
-  ],
-  objectivesApprovedOn: '2026-07-24',
-  checkIns: [
-    { due: '2026-08-18', selfOn: '2026-08-17', rmOn: '2026-08-19', rmRating: 3, rmNote: 'Steady progress on delivery.' },
-    { due: '2026-09-17', selfOn: '2026-09-16', rmOn: '2026-09-18', rmRating: 3, rmNote: 'Reviews still slow.' },
-    { due: '2026-10-17', selfOn: '2026-10-16', selfNote: 'Closed 9 of 10 sprint tickets; reviews now same-day.' },
-    { due: '2026-10-31' },
-  ],
-}]);
-
-// ponytail: PUT/POST /pips/:id/* once the endpoints are shared
-export function updatePip(employee: string, fn: (p: Pip) => Pip) { pips.update(l => l.map(p => p.employee === employee ? fn(structuredClone(p)) : p)); }
-
-// PIP outcome closes the PIP and the probation it extended
-export function closePip(employee: string, outcome: 'Confirmed' | 'Terminated', on: string, by: string, reason?: string) {
-  updatePip(employee, p => ({ ...p, outcome, decidedOn: on }));
-  probations.update(l => l.map(p => p.employee !== employee ? p : {
-    ...p, outcome, decidedOn: on,
-    decisions: [...(p.decisions ?? []), { outcome: outcome === 'Confirmed' ? 'Confirm' : 'Terminate', effectiveOn: on, decidedOn: on, by, reason, note: 'PIP outcome' }],
-  }));
+export function closeOnExit(employee: string, by: string, exitOn: string, reason: string) {
+  probations.update(l => l.map(p => p.employee === employee ? { ...p, outcome: 'Closed', decidedOn: exitOn, exitOn, exitReason: reason } : p));
+  log(employee, by, `Closed · employee exit on ${exitOn} · ${reason}`);
 }

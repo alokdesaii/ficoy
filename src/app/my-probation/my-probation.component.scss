@@ -61,3 +61,6 @@
 @media (max-width: 767px) { .cards3 { grid-template-columns: 1fr; } }
 @media (max-width: 575px) { .hero { flex-direction: column; text-align: center; } }
 @media (max-width: 767px) { .as { width: 100%; .form-select { flex: 1; width: auto; } } }
+
+.objsec { margin-bottom: 24px; .two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; b { font-size: 13px; } p { margin: 4px 0 0; white-space: pre-line; font-size: 14px; line-height: 1.5; } } }
+@media (max-width: 575px) { .objsec .two { grid-template-columns: 1fr; } }

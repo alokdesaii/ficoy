@@ -1,7 +1,7 @@
 <div class="page-head">
   <div>
     <h2 class="page-main-heading">Notifications</h2>
-    <p class="sub">{{ counts().unread ? counts().unread + ' unread' : 'You\'re all caught up' }} · probation, review and PIP updates</p>
+    <p class="sub">{{ counts().unread ? counts().unread + ' unread' : 'You\'re all caught up' }} · probation and review updates</p>
   </div>
   <button class="btn btn-cancel" (click)="markAll()" [disabled]="!counts().unread"><i class="fa-solid fa-check-double"></i>Mark all as read</button>
 </div>

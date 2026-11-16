@@ -15,12 +15,15 @@
     <div class="actions">
       @if (!closed()) {
         <button class="btn btn-cancel" (click)="remind()"><i class="fa-regular fa-bell"></i>Send Reminder</button>
-        @if (!p()!.extendedTo) { <a class="btn btn-primary" [routerLink]="['/probation/decide', e()!.code]"><i class="fa-solid fa-gavel"></i>Make Decision</a> }
-        @else { <a class="btn btn-primary" [routerLink]="['/probation/pip', e()!.code]"><i class="fa-solid fa-route"></i>Open PIP</a> }
+        @if (canHandToHod()) { <button class="btn btn-cancel" (click)="ask('hod')"><i class="fa-solid fa-user-shield"></i>Hand to HOD</button> }
+        <button class="btn btn-cancel" (click)="ask('exit')"><i class="fa-solid fa-door-open"></i>Close on Exit</button>
+        <a class="btn btn-primary" [routerLink]="['/probation/review', e()!.code]"><i class="fa-regular fa-clipboard"></i>Open RM Review</a>
+      } @else {
+        <button class="btn btn-cancel" (click)="ask('reopen')"><i class="fa-solid fa-rotate-left"></i>Reopen</button>
       }
     </div>
   </div>
-  @if (resent() === 'remind') { <p class="toast"><i class="fa-solid fa-circle-check"></i>Reminder sent to {{ e()!.name }} and {{ e()!.manager || 'HR' }}</p> }
+  @if (resent() === 'remind') { <p class="toast"><i class="fa-solid fa-circle-check"></i>Reminder sent to {{ reviewer() || 'HR' }}</p> }
 
   <div class="dates">
     <div><span>Start</span><b>{{ t.start | date: 'dd MMM y' }}</b></div>
@@ -68,8 +71,9 @@
                   <span class="when">{{ n.m.date | date: 'dd MMM y' }} · {{ n.m.label }}</span>
                   <span class="to">@for (r of n.to; track r) { <em>{{ r }}: {{ who(r) }}</em> }</span>
                 </div>
-                <span class="ok"><i class="fa-solid fa-check"></i>Delivered</span>
-                <button class="btn btn-cancel btn-sm-row" (click)="resend(n.m)" [disabled]="resent() === n.m.date + n.m.label">
+                @if (n.failed && resent() !== n.m.date + n.m.label) { <span class="ok fail" title="HR has been alerted"><i class="fa-solid fa-triangle-exclamation"></i>Failed to {{ e()!.email }} · HR alerted</span> }
+                @else { <span class="ok"><i class="fa-solid fa-check"></i>Delivered</span> }
+                <button class="btn btn-sm-row" [class.btn-primary]="n.failed" [class.btn-cancel]="!n.failed" (click)="resend(n.m)" [disabled]="resent() === n.m.date + n.m.label">
                   {{ resent() === n.m.date + n.m.label ? 'Resent' : 'Resend' }}</button>
               </li>
             } @empty { <li class="empty">No notifications sent yet</li> }
@@ -90,23 +94,43 @@
 
     <aside class="side">
       <div class="panel">
+        <h3 class="sub-heading">Initial Meeting</h3>
+        @if (p()!.initial; as im) {
+          <dl class="im">
+            <div><dt>Objectives</dt><dd>{{ im.objectives }}</dd></div>
+            <div><dt>Development plan</dt><dd>{{ im.development }}</dd></div>
+          </dl>
+          <p class="muted small m-0">Recorded by {{ im.by }} on {{ im.on | date: 'd MMM y' }}</p>
+        } @else {
+          <p class="muted" [class.bad]="!closed() && today > meetingDue()">{{ closed() ? 'Not recorded.' : (today > meetingDue() ? 'Overdue. ' : '') + 'Due by ' + (meetingDue() | date: 'd MMM y') + '. The line manager sets objectives and a development plan within 1 week of joining.' }}</p>
+          @if (!closed()) { <button class="btn btn-cancel btn-sm-row" (click)="ask('initial')"><i class="fa-solid fa-handshake"></i>Record Initial Meeting</button> }
+        }
+      </div>
+
+      <div class="panel">
         <h3 class="sub-heading">Reviews</h3>
         <ul class="reviews">
-          <li [class.done]="p()!.employeeReviewOn">
-            <i class="fa-solid" [class.fa-circle-check]="p()!.employeeReviewOn" [class.fa-hourglass-half]="!p()!.employeeReviewOn"></i>
-            <div><b>Self review</b><span>{{ p()!.employeeReviewOn ? 'Submitted ' + (p()!.employeeReviewOn | date: 'd MMM y') : 'Waiting for ' + e()!.name.split(' ')[0] }}</span></div>
-            <a class="go" [routerLink]="['/probation/review/self', e()!.code]">{{ p()!.employeeReviewOn ? 'View' : 'Open' }}</a>
-          </li>
           <li [class.done]="p()!.rmReviewOn">
             <i class="fa-solid" [class.fa-circle-check]="p()!.rmReviewOn" [class.fa-hourglass-half]="!p()!.rmReviewOn"></i>
-            <div><b>RM review</b><span>{{ p()!.rmReviewOn ? 'Submitted ' + (p()!.rmReviewOn | date: 'd MMM y') : 'Waiting for ' + (e()!.manager || 'RM') }}</span></div>
-            <a class="go" [routerLink]="['/probation/review/rm', e()!.code]">{{ p()!.rmReviewOn ? 'View' : 'Open' }}</a>
+            <div><b>{{ p()!.reviewer ? 'HOD' : 'RM' }} review{{ p()!.extendedTo ? ' (extension)' : '' }}</b><span>{{ p()!.rmReviewOn ? 'Submitted ' + (p()!.rmReviewOn | date: 'd MMM y') : 'Waiting for ' + (reviewer() || 'RM') }}</span></div>
+            <a class="go" [routerLink]="['/probation/review', e()!.code]">{{ p()!.rmReviewOn ? 'View' : 'Open' }}</a>
           </li>
+          @if (p()!.rmReviewOn) {
+            <li [class.done]="p()!.ackOn">
+              <i class="fa-solid" [class.fa-circle-check]="p()!.ackOn" [class.fa-signature]="!p()!.ackOn"></i>
+              <div><b>Employee sign-off</b><span>{{ p()!.ackOn ? 'Acknowledged ' + (p()!.ackOn | date: 'd MMM y') : 'Waiting for ' + e()!.name.split(' ')[0] }}</span></div>
+            </li>
+          }
           <li [class.done]="closed()">
             <i class="fa-solid" [class.fa-circle-check]="closed()" [class.fa-gavel]="!closed()"></i>
-            <div><b>HR decision</b><span>{{ closed() ? p()!.outcome + ' · ' + (p()!.decidedOn | date: 'd MMM y') : p()!.extendedTo ? 'Extended · PIP outcome due ' + (p()!.extendedTo | date: 'd MMM y') : s().blockDecisionUntilBothReviews && !(p()!.employeeReviewOn && p()!.rmReviewOn) ? 'Unlocks after both reviews' : 'Ready for HR' }}</span></div>
-            @if (!closed() && !p()!.extendedTo) { <a class="go" [routerLink]="['/probation/decide', e()!.code]">Decide</a> }
+            <div><b>Outcome</b><span>{{ closed() ? p()!.outcome + ' · ' + (p()!.decidedOn | date: 'd MMM y') : 'Decided when the review is submitted' }}</span></div>
           </li>
+          @if (p()!.rmReviewOn) {
+            <li class="done">
+              <i class="fa-solid fa-folder-open"></i>
+              <div><b>HR record</b><span>Form received {{ p()!.rmReviewOn | date: 'd MMM y' }}@if (p()!.outcome === 'Confirmed') { · confirmation issued {{ p()!.decidedOn | date: 'd MMM y' }} }</span></div>
+            </li>
+          }
         </ul>
       </div>
 
@@ -120,6 +144,42 @@
       </div>
     </aside>
   </div>
+
+  @if (action(); as a) {
+    <div class="backdrop" (click)="action.set(null)">
+      <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="actTitle" (click)="$event.stopPropagation()">
+        <div class="dialog-head"><h4 id="actTitle">{{ a === 'initial' ? 'Initial meeting' : a === 'hod' ? 'Hand review to HOD' : a === 'exit' ? 'Close probation on exit' : 'Reopen for correction' }}</h4>
+          <button class="btn-close-popup" (click)="action.set(null)" aria-label="Close"><i class="fa-solid fa-xmark"></i></button></div>
+        <div class="dialog-body">
+          <p class="muted">@switch (a) {
+            @case ('hod') { {{ hod() }} (head of {{ e()!.department }}) will own the review instead of {{ e()!.manager }}. }
+            @case ('initial') { Appendix F Part 1. Agreed between {{ reviewer() || 'the line manager' }} and {{ e()!.name }}; reviewed at the probation review. }
+            @case ('exit') { The probation closes with the exit date and reason. No review or decision follows. }
+            @default { The {{ p()!.outcome?.toLowerCase() }} outcome is cleared and the review goes back to {{ reviewer() || 'the RM' }}. The audit trail keeps both. }
+          }</p>
+          @if (a === 'initial') {
+            <div class="field mb-3"><label class="form-label" for="imd">Meeting date<span class="req">*</span></label>
+              <input id="imd" class="form-control" type="date" [min]="t.start" [max]="today" [(ngModel)]="actDate" [class.is-invalid]="actTried && !actDate" /></div>
+            <div class="field mb-3"><label class="form-label" for="imo">Section A: Objectives<span class="req">*</span></label>
+              <textarea id="imo" class="form-control" rows="4" placeholder="One objective per line" [(ngModel)]="objectives" [class.is-invalid]="actTried && !objectives.trim()"></textarea></div>
+            <div class="field"><label class="form-label" for="imp">Section B: Development plan<span class="req">*</span></label>
+              <textarea id="imp" class="form-control" rows="3" placeholder="Training, support, buddy" [(ngModel)]="development" [class.is-invalid]="actTried && !development.trim()"></textarea></div>
+          }
+          @if (a === 'exit') {
+            <div class="field mb-3"><label class="form-label" for="xd">Exit date<span class="req">*</span></label>
+              <input id="xd" class="form-control" type="date" [min]="t.start" [(ngModel)]="actDate" [class.is-invalid]="actTried && !actDate" /></div>
+          }
+          @if (a !== 'initial') {
+          <div class="field"><label class="form-label" for="xr">Reason<span class="req">*</span></label>
+            <textarea id="xr" class="form-control" rows="3" [(ngModel)]="actReason" [class.is-invalid]="actTried && !actReason.trim()"
+                      [placeholder]="a === 'hod' ? 'e.g. RM on long leave' : a === 'exit' ? 'e.g. Resigned' : 'What needs correcting'"></textarea></div>
+          }
+        </div>
+        <div class="dialog-foot"><button class="btn btn-cancel" (click)="action.set(null)">Cancel</button>
+          <button class="btn btn-primary" (click)="act()">{{ a === 'initial' ? 'Save Initial Meeting' : a === 'hod' ? 'Hand to HOD' : a === 'exit' ? 'Close Probation' : 'Reopen' }}</button></div>
+      </div>
+    </div>
+  }
 } @else {
   <div class="panel empty">No probation record found. <a routerLink="/probation/list">Back to the list</a></div>
 }

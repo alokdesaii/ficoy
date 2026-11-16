@@ -7,8 +7,7 @@ const GROUPS: { title: string; keys: EventKey[] }[] = [
   { title: 'Probation', keys: ['started', 'reminder', 'leaveAdjusted'] },
   { title: 'Reviews', keys: ['reviewOpen', 'reviewSubmitted', 'overdue'] },
   { title: 'Outcomes', keys: ['confirmed', 'extended', 'terminated'] },
-  { title: 'PIP', keys: ['pipStarted', 'pipCheckpoint', 'pipOutcome'] },
-  { title: 'Letters', keys: ['letterApproval', 'letterIssued'] },
+  { title: 'Letters', keys: ['letterIssued', 'deliveryFailed'] },
 ];
 
 // fixed sample so every design reads realistically
@@ -39,9 +38,8 @@ export class NotificationDesignsComponent {
   facts = computed<[string, string][]>(() => {
     const e = this.event();
     const base: [string, string][] = this.role() === 'Employee' ? [] : [['Employee', SAMPLE.name], ['Designation', SAMPLE.designation]];
-    if (e.startsWith('pip')) return [...base, ['PIP period', '30 Oct – 29 Nov 2026'], ['Next check-in', SAMPLE.due]];
     if (e === 'confirmed') return [...base, ['Confirmed from', SAMPLE.effective]];
-    if (e === 'extended') return [...base, ['New end date', SAMPLE.newEnd], ['Extension', '1 month with PIP']];
+    if (e === 'extended') return [...base, ['New end date', SAMPLE.newEnd], ['Extension', '1 month, one time']];
     if (e === 'terminated') return [...base, ['Effective', SAMPLE.effective], ['Last working day', SAMPLE.lastDay]];
     if (e.startsWith('letter')) return [...base, ['Letter', SAMPLE.letter]];
     return [...base, ['Probation', `${SAMPLE.start} – ${SAMPLE.end}`], ['Reviews', SAMPLE.reviews]];

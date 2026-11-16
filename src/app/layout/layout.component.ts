@@ -72,7 +72,6 @@ export class LayoutComponent {
       { label: 'Probation Dashboard', link: '/probation' },
       { label: 'My Probation', link: '/probation/me' },
       { label: 'Probation List', link: '/probation/list' },
-      { label: 'PIP List', link: '/probation/pip' },
       { label: 'Letter Templates', link: '/probation/letters' },
       { label: 'Notification Designs', link: '/probation/notification-designs' },
       { label: 'Reports', link: '/probation/reports' },
@@ -83,9 +82,7 @@ export class LayoutComponent {
   get crumbs() {
     const url = this.router.url.split('?')[0];
     if (url.startsWith('/probation/view/')) return ['Probation', 'Probation List', 'Probation Detail'];
-    if (/^\/probation\/pip\/./.test(url)) return ['Probation', 'PIP List', 'PIP Plan'];
-    if (url.startsWith('/probation/decide/')) return ['Probation', 'Probation List', 'Probation Decision'];
-    if (url.startsWith('/probation/review/')) return ['Probation', 'Probation List', url.includes('/self/') ? 'Self Review' : 'RM Review'];
+    if (url.startsWith('/probation/review/')) return ['Probation', 'Probation List', 'RM Review'];
     if (/^\/(employee(view|edit)|updatesalarydetails)\//.test(url)) return ['Employee Management', 'Employee List', this.title.getTitle()];
     for (const m of this.menu) {
       const c = m.children?.find(c => url === c.link || url.startsWith(c.link + '/'));

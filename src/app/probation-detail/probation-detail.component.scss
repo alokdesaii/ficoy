@@ -14,7 +14,7 @@
     &.hl { background: var(--purple-bg); span, b { color: var(--purple-ink); } }
     &.strong { background: var(--brand-tint); span { color: var(--brand-text); } } }
   .prog { flex: 1.4; .bar { height: 8px; margin-top: 8px; border-radius: 999px; background: var(--bg); overflow: hidden; i { display: block; height: 100%; background: var(--brand); } }
-    .bar[data-s='Review Due'] i { background: var(--warn-fill); } .bar[data-s='Overdue'] i { background: var(--danger); } .bar[data-s='Extended · PIP'] i { background: #8a5cbc; } } }
+    .bar[data-s='Review Due'] i { background: var(--warn-fill); } .bar[data-s='Overdue'] i { background: var(--danger); } .bar[data-s='Extended'] i { background: #8a5cbc; } } }
 
 .grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 24px; align-items: start; }
 .side { display: flex; flex-direction: column; gap: 24px; }
@@ -42,7 +42,7 @@
   .ni { display: grid; place-items: center; flex: none; width: 32px; height: 32px; border-radius: 8px; background: var(--brand-tint); color: var(--brand-text); font-size: 13px; }
   .body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; b { color: var(--heading); font-size: 14px; } .when { color: var(--text-2); font-size: 12px; }
     .to { display: flex; flex-wrap: wrap; gap: 4px; em { padding: 1px 6px; border-radius: 4px; background: var(--bg); color: var(--text-2); font-size: 11px; font-style: normal; } } }
-  .ok { display: inline-flex; align-items: center; gap: 4px; color: var(--ok); font-size: 12px; white-space: nowrap; }
+  .ok { display: inline-flex; align-items: center; gap: 4px; color: var(--ok); font-size: 12px; white-space: nowrap; &.fail { color: var(--bad); white-space: normal; } }
   .empty { color: var(--text-2); justify-content: center; padding: 32px; } }
 .btn-sm-row { height: 30px; padding: 0 10px; font-size: 12px; }
 .num { font-variant-numeric: tabular-nums; white-space: nowrap; } .nowrap { white-space: nowrap; }
@@ -58,8 +58,11 @@
 
 .pill { display: inline-flex; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 500; white-space: nowrap;
   &[data-s='In Probation'] { background: var(--brand-tint); color: var(--brand-text); } &[data-s='Review Due'] { background: var(--warn-bg); color: var(--warn); }
-  &[data-s='Overdue'] { background: var(--bad-bg); color: var(--bad); } &[data-s='Extended · PIP'] { background: var(--purple-bg); color: var(--purple-ink); }
-  &[data-s='Confirmed'] { background: var(--ok-bg); color: var(--ok); } &[data-s='Terminated'] { background: var(--khaki-bg); color: var(--khaki-ink); } }
+  &[data-s='Overdue'] { background: var(--bad-bg); color: var(--bad); } &[data-s='Extended'] { background: var(--purple-bg); color: var(--purple-ink); }
+  &[data-s='Confirmed'] { background: var(--ok-bg); color: var(--ok); } &[data-s='Terminated'] { background: var(--khaki-bg); color: var(--khaki-ink); } &[data-s='Closed'] { background: var(--bg); color: var(--text-2); } }
 .empty { padding: 48px; text-align: center; color: var(--text-2); }
 
 @media (max-width: 1199px) { .grid { grid-template-columns: 1fr; } }
+
+.im { margin: 0 0 8px; div + div { margin-top: 10px; } dt { margin-bottom: 2px; color: var(--text-2); font-size: 12px; font-weight: 500; } dd { margin: 0; font-size: 13px; line-height: 1.5; white-space: pre-line; } }
+.muted.bad { color: var(--bad); }

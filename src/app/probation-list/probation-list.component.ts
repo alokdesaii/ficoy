@@ -9,7 +9,7 @@ import { departments } from '../departments';
 import { leaves } from '../leaves';
 import { exportCsv } from '../csv';
 
-const STAGES: Stage[] = ['In Probation', 'Review Due', 'Overdue', 'Extended · PIP', 'Confirmed', 'Terminated'];
+const STAGES: Stage[] = ['In Probation', 'Review Due', 'Overdue', 'Extended', 'Confirmed', 'Terminated', 'Closed'];
 
 @Component({
   selector: 'app-probation-list',
@@ -47,6 +47,6 @@ export class ProbationListComponent {
 
   export() {
     exportCsv('probations', ['Employee', 'Code', 'Department', 'Reporting Manager', 'Employment Type', 'Start', 'Original End', 'Leave Days Added', 'Current End', 'Stage', 'Employee Review', 'RM Review'],
-      this.filtered().map(r => [r.e.name, r.e.code, r.e.department, r.e.manager, r.p.type, r.t.start, r.t.baseEnd, r.t.adj.days, r.t.end, r.t.stage, r.p.employeeReviewOn ?? '', r.p.rmReviewOn ?? '']));
+      this.filtered().map(r => [r.e.name, r.e.code, r.e.department, r.e.manager, r.p.type, r.t.start, r.t.baseEnd, r.t.adj.days, r.t.end, r.t.stage, r.p.rmReviewOn ?? '']));
   }
 }

@@ -35,7 +35,7 @@
   <div class="table-responsive">
     <table stack class="table">
       <thead><tr>
-        <th>Employee</th><th>Reporting Manager</th><th>Start</th><th>End</th><th class="prog-col">Progress</th><th>Reviews</th><th>Stage</th><th class="text-end">Action</th>
+        <th>Employee</th><th>Reporting Manager</th><th>Start</th><th>End</th><th class="prog-col">Progress</th><th>RM Review</th><th>Stage</th><th class="text-end">Action</th>
       </tr></thead>
       <tbody>
         @for (r of filtered(); track r.p.employee) {
@@ -50,14 +50,13 @@
               @else if (r.t.adj.days) { <span class="badge-mini" [title]="'Originally ' + (r.t.baseEnd | date: 'dd MMM y') + ' · ' + r.t.adj.items[0].type">+{{ r.t.adj.days }}d leave</span> }
             </td>
             <td class="prog-col">
-              @if (r.t.stage === 'Confirmed' || r.t.stage === 'Terminated') { <span class="muted small">Closed {{ r.p.decidedOn | date: 'dd MMM yy' }}</span> }
+              @if (r.p.outcome) { <span class="muted small">Closed {{ r.p.decidedOn | date: 'dd MMM yy' }}</span> }
               @else {
                 <div class="bar" [attr.data-s]="r.t.stage"><span [style.width.%]="r.t.progress * 100"></span></div>
                 <span class="left" [class.bad]="r.t.daysLeft < 0">{{ left(r.t.daysLeft) }}</span>
               }
             </td>
             <td class="nowrap reviews">
-              <span [class.done]="r.p.employeeReviewOn" [title]="r.p.employeeReviewOn ? 'Submitted ' + (r.p.employeeReviewOn | date: 'd MMM') : 'Not submitted'"><i class="fa-solid" [class.fa-circle-check]="r.p.employeeReviewOn" [class.fa-circle]="!r.p.employeeReviewOn"></i>Self</span>
               <span [class.done]="r.p.rmReviewOn" [title]="r.p.rmReviewOn ? 'Submitted ' + (r.p.rmReviewOn | date: 'd MMM') : 'Not submitted'"><i class="fa-solid" [class.fa-circle-check]="r.p.rmReviewOn" [class.fa-circle]="!r.p.rmReviewOn"></i>RM</span>
             </td>
             <td><span class="pill" [attr.data-s]="r.t.stage">{{ r.t.stage }}</span></td>

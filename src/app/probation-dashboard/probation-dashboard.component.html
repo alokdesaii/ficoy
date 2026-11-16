@@ -5,7 +5,6 @@
   </div>
   <div class="d-flex gap-2">
     <a routerLink="/probation/list" class="btn btn-cancel"><i class="fa-solid fa-list"></i>All probations</a>
-    <a routerLink="/probation/pip" class="btn btn-cancel"><i class="fa-solid fa-route"></i>PIPs</a>
   </div>
 </div>
 
@@ -13,7 +12,7 @@
   <a class="k blue" routerLink="/probation/list"><span>On probation</span><b>{{ kpi().onProbation }}</b><small>open probations</small></a>
   <a class="k warn" routerLink="/probation/list"><span>Reviews due</span><b>{{ kpi().reviewDue }}</b><small>in the review window</small></a>
   <a class="k bad" routerLink="/probation/list"><span>Overdue</span><b>{{ kpi().overdue }}</b><small>past end date</small></a>
-  <a class="k pip" routerLink="/probation/pip"><span>Active PIPs</span><b>{{ kpi().pips }}</b><small>extended probations</small></a>
+  <a class="k pip" routerLink="/probation/list"><span>Extended</span><b>{{ kpi().extended }}</b><small>in an extension</small></a>
   <div class="k ok"><span>Confirmed in {{ year }}</span><b>{{ kpi().confirmed }}</b><small>of {{ kpi().decided }} decided</small></div>
   <div class="k khaki"><span>Confirmation rate</span><b>{{ kpi().decided ? kpi().rate + '%' : '—' }}</b><small>this year</small></div>
 </div>
@@ -24,7 +23,7 @@
     <ul class="actions">
       @for (a of actions(); track a.kind + a.code) {
         <li [attr.data-k]="a.kind">
-          <span class="ic"><i class="fa-solid" [class.fa-triangle-exclamation]="a.kind === 'overdue'" [class.fa-gavel]="a.kind === 'decide'" [class.fa-route]="a.kind === 'pip'" [class.fa-list-check]="a.kind === 'objectives'"></i></span>
+          <span class="ic"><i class="fa-solid" [class.fa-triangle-exclamation]="a.kind === 'overdue'"></i></span>
           <div class="tx"><b>{{ a.name }}</b><span>{{ a.detail }}</span></div>
           <a class="btn btn-sm-row" [class.btn-primary]="a.kind !== 'overdue'" [class.btn-cancel]="a.kind === 'overdue'" [routerLink]="a.link">{{ a.cta }}</a>
         </li>
@@ -39,8 +38,7 @@
         <li>
           <span class="av">{{ initials(r.e.name) }}</span>
           <div class="tx"><a [routerLink]="['/probation/view', r.e.code]"><b>{{ r.e.name }}</b></a><span>Ends {{ r.t.end | date: 'd MMM' }} · RM {{ r.e.manager || '—' }}</span></div>
-          <span class="rv"><i class="fa-solid" [class.fa-circle-check]="r.p.employeeReviewOn" [class.fa-circle]="!r.p.employeeReviewOn" [class.on]="r.p.employeeReviewOn"></i>Self
-            <i class="fa-solid" [class.fa-circle-check]="r.p.rmReviewOn" [class.fa-circle]="!r.p.rmReviewOn" [class.on]="r.p.rmReviewOn"></i>RM</span>
+          <span class="rv"><i class="fa-solid" [class.fa-circle-check]="r.p.rmReviewOn" [class.fa-circle]="!r.p.rmReviewOn" [class.on]="r.p.rmReviewOn"></i>RM</span>
           <span class="dl" [class.soon]="r.t.daysLeft <= 7">{{ r.t.daysLeft === 0 ? 'Today' : r.t.daysLeft + 'd' }}</span>
         </li>
       } @empty { <li class="none">No probations end in the next 30 days</li> }

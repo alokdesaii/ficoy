@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { addDays, DEFAULT_SETTINGS, EMPLOYMENT_TYPES, EventKey, EVENTS, probationEnd, ProbationSettings, probationSettings, Role, ROLES } from '../probation';
 import { LEAVE_TYPES } from '../leaves';
 
-type Tab = 'general' | 'reviews' | 'pip' | 'leave' | 'notify';
+type Tab = 'general' | 'reviews' | 'extension' | 'leave' | 'notify';
 
 @Component({
   selector: 'app-probation-settings',
@@ -16,7 +16,7 @@ export class ProbationSettingsComponent {
   tabs: { k: Tab; t: string; i: string }[] = [
     { k: 'general', t: 'General', i: 'fa-solid fa-sliders' },
     { k: 'reviews', t: 'Reviews & Ratings', i: 'fa-regular fa-star' },
-    { k: 'pip', t: 'Extension & PIP', i: 'fa-solid fa-route' },
+    { k: 'extension', t: 'Extension', i: 'fa-solid fa-route' },
     { k: 'leave', t: 'Leave Adjustment', i: 'fa-regular fa-calendar-minus' },
     { k: 'notify', t: 'Reminders & Notifications', i: 'fa-regular fa-bell' },
   ];
@@ -46,7 +46,6 @@ export class ProbationSettingsComponent {
     const shortest = Math.min(...Object.values(v.durations).filter(Boolean)) * 28;
     if (v.reviewOpensDaysBefore >= shortest) e.push('The review opens before the probation even starts for the shortest duration.');
     if (v.reminderDays.some(n => n < 0 || n >= shortest)) e.push('Reminder days must fall inside the probation period.');
-    if (v.pipCheckpointEveryDays > v.pipDurationDays) e.push('PIP checkpoints must be no longer than the PIP itself.');
     return e;
   });
 

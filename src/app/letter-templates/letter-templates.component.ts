@@ -53,9 +53,10 @@ export class LetterTemplatesComponent {
     const months = d?.extendMonths ?? rm?.extendMonths ?? 1;
     return {
       employee_name: e.name, first_name: e.name.split(' ')[0], employee_code: e.code, designation: e.designation, department: e.department,
-      joining_date: fmt(e.joined), probation_end: fmt(t.end), letter_date: fmt(this.today),
+      joining_date: fmt(e.joined), probation_end: fmt(t.adjustedEnd), company_name: COMPANY.name, probation_months: String(probationSettings().durations[p.type] || 3),
+      review_date: fmt(d?.outcome === 'Extend' ? d.decidedOn : rm?.submittedOn ?? this.today), letter_date: fmt(this.today),
       effective_date: fmt(d?.effectiveOn ?? t.end), new_end_date: fmt(p.extendedTo ?? t.end),
-      extension_months: `${months} month${months > 1 ? 's' : ''}`, pip_focus: (rm?.pipFocus ?? 'Objectives agreed with your reporting manager').split('\n').map(l => '• ' + l).join('\n'),
+      extension_months: `${months} month${months > 1 ? 's' : ''}`, improvement_areas: (rm?.extensionFocus ?? 'Areas agreed with your reporting manager').split('\n').map(l => '• ' + l).join('\n'),
       last_working_day: fmt(d?.lastWorkingDay ?? t.end), reason: d?.reason ?? rm?.reason ?? 'Performance did not meet the required standard.', rm_name: e.manager || 'Your reporting manager',
     };
   });

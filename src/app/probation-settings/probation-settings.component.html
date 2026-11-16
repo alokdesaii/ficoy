@@ -44,7 +44,6 @@
           <div class="rows">
             <div class="row-line"><label for="open">Review opens</label>
               <div class="unit"><input id="open" class="form-control" type="number" min="1" [(ngModel)]="d().reviewOpensDaysBefore" (ngModelChange)="touch()" /><span>days before end</span></div></div>
-            <div class="row-line check"><label><input type="checkbox" class="form-check-input" [(ngModel)]="d().blockDecisionUntilBothReviews" (ngModelChange)="touch()" />HR can only decide once both the employee and RM reviews are submitted</label></div>
           </div>
 
           <h3 class="sub-heading mt">Rating scale</h3>
@@ -57,7 +56,7 @@
             <div class="unit"><input id="cmt" class="form-control" type="number" min="1" [max]="d().scale.length" [(ngModel)]="d().commentRequiredAtOrBelow" (ngModelChange)="touch()" /><span>or below</span></div></div>
 
           <h3 class="sub-heading mt">Criteria</h3>
-          <p class="help">Both the employee and the RM rate each criterion.</p>
+          <p class="help">The RM rates each criterion. There is no employee self assessment.</p>
           <ul class="crit">
             @for (c of d().criteria; track c; let i = $index; let first = $first; let last = $last) {
               <li><span class="grip">{{ i + 1 }}</span><span class="name">{{ c }}</span>
@@ -71,33 +70,23 @@
             <button class="btn btn-cancel" (click)="addCriterion()" [disabled]="!newCriterion.trim()"><i class="fa-solid fa-plus"></i>Add</button></div>
 
           <h3 class="sub-heading mt">Recommended outcome</h3>
-          <p class="help">Based on the RM's average rating. HR sees the recommendation when deciding.</p>
+          <p class="help">Suggested to the RM from their average rating. The RM's choice is final; HR can reopen it.</p>
           <div class="bands">
             <div class="band ok"><b>Confirm</b><span>average ≥</span><input class="form-control" type="number" step="0.1" min="1" [max]="d().scale.length" [(ngModel)]="d().confirmAtOrAbove" (ngModelChange)="touch()" aria-label="Confirm threshold" /></div>
-            <div class="band warn"><b>Extend + PIP</b><span>average ≥</span><input class="form-control" type="number" step="0.1" min="1" [max]="d().scale.length" [(ngModel)]="d().extendAtOrAbove" (ngModelChange)="touch()" aria-label="Extend threshold" /></div>
+            <div class="band warn"><b>Extend</b><span>average ≥</span><input class="form-control" type="number" step="0.1" min="1" [max]="d().scale.length" [(ngModel)]="d().extendAtOrAbove" (ngModelChange)="touch()" aria-label="Extend threshold" /></div>
             <div class="band bad"><b>Terminate</b><span>below {{ d().extendAtOrAbove }}</span></div>
           </div>
-          <div class="row-line check"><label><input type="checkbox" class="form-check-input" [(ngModel)]="d().hrCanOverride" (ngModelChange)="touch()" />HR can override the recommendation (a reason is required)</label></div>
         }
 
-        @case ('pip') {
+        @case ('extension') {
           <h3 class="sub-heading">Extension</h3>
           <div class="rows">
             <div class="row-line"><label for="mx">Extensions allowed</label>
               <div class="unit"><input id="mx" class="form-control" type="number" min="0" max="3" [(ngModel)]="d().maxExtensions" (ngModelChange)="touch()" /><span>per employee</span></div></div>
             <div class="row-line"><label for="mxm">Longest extension</label>
               <div class="unit"><input id="mxm" class="form-control" type="number" min="1" max="6" [(ngModel)]="d().maxExtensionMonths" (ngModelChange)="touch()" /><span>months</span></div></div>
-            <div class="row-line check"><label><input type="checkbox" class="form-check-input" [(ngModel)]="d().pipRequiredOnExtension" (ngModelChange)="touch()" />Every extension starts a Performance Improvement Plan</label></div>
           </div>
-
-          <h3 class="sub-heading mt">Performance Improvement Plan</h3>
-          <div class="rows">
-            <div class="row-line"><label for="pd">PIP length</label>
-              <div class="unit"><input id="pd" class="form-control" type="number" min="14" [(ngModel)]="d().pipDurationDays" (ngModelChange)="touch()" /><span>days</span></div></div>
-            <div class="row-line"><label for="pc">Checkpoint every</label>
-              <div class="unit"><input id="pc" class="form-control" type="number" min="7" [(ngModel)]="d().pipCheckpointEveryDays" (ngModelChange)="touch()" /><span>days</span></div></div>
-          </div>
-          <p class="help">The RM sets the PIP objectives and HR approves them. Each checkpoint uses the same two-way review as probation, and the PIP ends in Confirm or Terminate.</p>
+          <p class="help">The RM notes what must improve. Before the new end date the RM reviews again, and that review ends in Confirm or Terminate. The extended end date can't be changed.</p>
         }
 
         @case ('leave') {
