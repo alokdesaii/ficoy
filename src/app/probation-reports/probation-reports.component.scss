@@ -1,5 +1,5 @@
 .sub { margin: 4px 0 0; color: var(--text-2); font-size: 13px; }
-.picker { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px;
+.picker { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px;
   button { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 14px; border: 2px solid transparent; border-radius: 12px; background: var(--c-bg); text-align: left;
     i { margin-bottom: 6px; color: var(--c-ink); font-size: 16px; } b { color: var(--heading); font-size: 13px; } span { color: var(--text-2); font-size: 11px; line-height: 1.35; }
     &:hover { border-color: color-mix(in srgb, var(--c-ink) 35%, transparent); } &.on { border-color: var(--c-ink); box-shadow: 0 4px 12px var(--shadow-md); } }

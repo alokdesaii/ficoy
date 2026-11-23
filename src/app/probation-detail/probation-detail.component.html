@@ -13,13 +13,26 @@
       </div>
     </div>
     <div class="actions">
-      @if (!closed()) {
-        <button class="btn btn-cancel" (click)="remind()"><i class="fa-regular fa-bell"></i>Send Reminder</button>
-        @if (canHandToHod()) { <button class="btn btn-cancel" (click)="ask('hod')"><i class="fa-solid fa-user-shield"></i>Hand to HOD</button> }
-        <button class="btn btn-cancel" (click)="ask('exit')"><i class="fa-solid fa-door-open"></i>Close on Exit</button>
-        <a class="btn btn-primary" [routerLink]="['/probation/review', e()!.code]"><i class="fa-regular fa-clipboard"></i>Open RM Review</a>
-      } @else {
-        <button class="btn btn-cancel" (click)="ask('reopen')"><i class="fa-solid fa-rotate-left"></i>Reopen</button>
+      @if (p()!.pending) {
+        @if (canApprove()) {
+          <button class="btn btn-cancel" (click)="ask('back')"><i class="fa-solid fa-rotate-left"></i>Send Back to RM</button>
+          <button class="btn btn-primary" (click)="approveNow()"><i class="fa-solid fa-stamp"></i>{{ approveLabel() }}</button>
+        }
+      } @else if (!closed() && t.applicable) {
+        @if (isAdmin()) {
+          <button class="btn btn-cancel" (click)="remind()"><i class="fa-regular fa-bell"></i>Send Reminder</button>
+          @if (canHandToHod()) { <button class="btn btn-cancel" (click)="ask('hod')"><i class="fa-solid fa-user-shield"></i>Hand to HOD</button> }
+          @if (p()!.reviewerRole !== 'Admin') { <button class="btn btn-cancel" (click)="ask('admin')"><i class="fa-solid fa-user-gear"></i>Admin Takeover</button> }
+          @if (!p()!.extendedTo && !p()!.rmReviewOn) { <button class="btn btn-cancel" (click)="ask('duration')"><i class="fa-regular fa-calendar"></i>Change Duration</button> }
+          <button class="btn btn-cancel" (click)="ask('applicable')"><i class="fa-solid fa-ban"></i>Not Applicable</button>
+          <button class="btn btn-cancel" (click)="ask('exit')"><i class="fa-solid fa-door-open"></i>Close on Exit</button>
+        }
+        @if (role() === 'HOD' && canHandToHod()) { <button class="btn btn-cancel" (click)="ask('hod')"><i class="fa-solid fa-user-shield"></i>Take Over as HOD</button> }
+        @if (canReview()) { <a class="btn btn-primary" [routerLink]="['/probation/review', e()!.code]"><i class="fa-regular fa-clipboard"></i>{{ p()!.extendedTo ? 'Open Final Review' : 'Open First Review' }}</a> }
+      } @else if (!t.applicable) {
+        @if (isAdmin()) { <button class="btn btn-primary" (click)="ask('applicable')"><i class="fa-solid fa-rotate-left"></i>Make Applicable</button> }
+      } @else if (isAdmin()) {
+        <button class="btn btn-cancel" (click)="ask('reopen')"><i class="fa-solid fa-rotate-left"></i>Reopen (HR)</button>
       }
     </div>
   </div>
@@ -27,8 +40,10 @@
 
   <div class="dates">
     <div><span>Start</span><b>{{ t.start | date: 'dd MMM y' }}</b></div>
+    <div [class.hl]="p()!.months"><span>Duration</span><b>{{ t.months }} months@if (p()!.months) { <small> (exception)</small> }</b></div>
+    <div><span>Cycle</span><b>#{{ p()!.cycle || 1 }}@if ((p()!.cycle || 1) > 1) { <small> (rehire)</small> }</b></div>
+    <div><span>Extensions used</span><b>{{ p()!.extendedTo ? 1 : 0 }} / {{ s().maxExtensions }}</b></div>
     <div><span>Original end</span><b>{{ t.baseEnd | date: 'dd MMM y' }}</b></div>
-    <div [class.hl]="t.adj.days"><span>Leave adjustment</span><b>{{ t.adj.days ? '+' + t.adj.days + ' days' : 'None' }}</b></div>
     @if (p()!.extendedTo) { <div class="hl"><span>Extended to</span><b>{{ p()!.extendedTo | date: 'dd MMM y' }}</b></div> }
     <div class="strong"><span>{{ closed() ? 'Closed on' : 'Current end' }}</span><b>{{ (closed() ? p()!.decidedOn : t.end) | date: 'dd MMM y' }}</b></div>
     @if (!closed()) {
@@ -42,7 +57,7 @@
       <div class="tabs" role="tablist">
         <button role="tab" [class.on]="tab() === 'timeline'" (click)="tab.set('timeline')">Timeline</button>
         <button role="tab" [class.on]="tab() === 'notifications'" (click)="tab.set('notifications')">Notifications <span class="n">{{ sent().length }}</span></button>
-        <button role="tab" [class.on]="tab() === 'audit'" (click)="tab.set('audit')">Audit Trail</button>
+        @if (isAdmin()) { <button role="tab" [class.on]="tab() === 'audit'" (click)="tab.set('audit')">Audit Trail</button> }
       </div>
 
       @switch (tab()) {
@@ -95,7 +110,7 @@
     <aside class="side">
       <div class="panel">
         <h3 class="sub-heading">Initial Meeting</h3>
-        @if (p()!.initial; as im) {
+        @if (p()!.initial?.held === 'Yes' ? p()!.initial : null; as im) {
           <dl class="im">
             <div><dt>Objectives</dt><dd>{{ im.objectives }}</dd></div>
             <div><dt>Development plan</dt><dd>{{ im.development }}</dd></div>
@@ -103,7 +118,7 @@
           <p class="muted small m-0">Recorded by {{ im.by }} on {{ im.on | date: 'd MMM y' }}</p>
         } @else {
           <p class="muted" [class.bad]="!closed() && today > meetingDue()">{{ closed() ? 'Not recorded.' : (today > meetingDue() ? 'Overdue. ' : '') + 'Due by ' + (meetingDue() | date: 'd MMM y') + '. The line manager sets objectives and a development plan within 1 week of joining.' }}</p>
-          @if (!closed()) { <button class="btn btn-cancel btn-sm-row" (click)="ask('initial')"><i class="fa-solid fa-handshake"></i>Record Initial Meeting</button> }
+          @if (!closed() && canReview()) { <button class="btn btn-cancel btn-sm-row" (click)="ask('initial')"><i class="fa-solid fa-handshake"></i>Record Initial Meeting</button> }
         }
       </div>
 
@@ -112,7 +127,7 @@
         <ul class="reviews">
           <li [class.done]="p()!.rmReviewOn">
             <i class="fa-solid" [class.fa-circle-check]="p()!.rmReviewOn" [class.fa-hourglass-half]="!p()!.rmReviewOn"></i>
-            <div><b>{{ p()!.reviewer ? 'HOD' : 'RM' }} review{{ p()!.extendedTo ? ' (extension)' : '' }}</b><span>{{ p()!.rmReviewOn ? 'Submitted ' + (p()!.rmReviewOn | date: 'd MMM y') : 'Waiting for ' + (reviewer() || 'RM') }}</span></div>
+            <div><b>{{ p()!.extendedTo ? 'Final review' : 'First review (3-month)' }}@if (p()!.reviewer) { · {{ p()!.reviewerRole || 'HOD' }} }</b><span>{{ p()!.rmReviewOn ? 'Submitted ' + (p()!.rmReviewOn | date: 'd MMM y') : 'Waiting for ' + (reviewer() || 'RM') }}</span></div>
             <a class="go" [routerLink]="['/probation/review', e()!.code]">{{ p()!.rmReviewOn ? 'View' : 'Open' }}</a>
           </li>
           @if (p()!.rmReviewOn) {
@@ -121,62 +136,93 @@
               <div><b>Employee sign-off</b><span>{{ p()!.ackOn ? 'Acknowledged ' + (p()!.ackOn | date: 'd MMM y') : 'Waiting for ' + e()!.name.split(' ')[0] }}</span></div>
             </li>
           }
+          @if (p()!.pending; as pd) {
+            @for (r of pd.chain; track r) {
+              <li [class.done]="approvedBy(r)">
+                <i class="fa-solid" [class.fa-circle-check]="approvedBy(r)" [class.fa-stamp]="!approvedBy(r)"></i>
+                <div><b>{{ r }} approval</b><span>{{ approvedBy(r) ? 'Approved by ' + approvedBy(r)!.by + ' · ' + (approvedBy(r)!.on | date: 'd MMM y') : 'Waiting for ' + (r === 'HOD' ? hod() : 'Admin') }}</span></div>
+              </li>
+            }
+          }
           <li [class.done]="closed()">
             <i class="fa-solid" [class.fa-circle-check]="closed()" [class.fa-gavel]="!closed()"></i>
-            <div><b>Outcome</b><span>{{ closed() ? p()!.outcome + ' · ' + (p()!.decidedOn | date: 'd MMM y') : 'Decided when the review is submitted' }}</span></div>
+            <div><b>Outcome</b><span>{{ closed() ? p()!.outcome + ' · ' + (p()!.decidedOn | date: 'd MMM y') : (p()!.pending ? p()!.pending!.d.outcome + ' submitted, awaiting approval' : 'RM submits, then ' + chain().join(' → ') + ' approve') }}</span></div>
           </li>
-          @if (p()!.rmReviewOn) {
-            <li class="done">
-              <i class="fa-solid fa-folder-open"></i>
-              <div><b>HR record</b><span>Form received {{ p()!.rmReviewOn | date: 'd MMM y' }}@if (p()!.outcome === 'Confirmed') { · confirmation issued {{ p()!.decidedOn | date: 'd MMM y' }} }</span></div>
+          @if (p()!.outcome === 'Confirmed' || p()!.outcome === 'Terminated' || p()!.hr) {
+            <li [class.done]="p()!.hr">
+              <i class="fa-solid" [class.fa-folder-open]="p()!.hr" [class.fa-folder]="!p()!.hr"></i>
+              <div><b>Outcome Confirmation Form</b>
+                @if (p()!.hr; as h) { <span>Received by {{ h.receivedBy }} · {{ h.receivedOn | date: 'd MMM y' }}@if (h.issuedOn) { · issued {{ h.issuedOn | date: 'd MMM y' }} }</span> }
+                @else { <span>Waiting for HR processing</span> }
+                @if (e()!.status) { <span>Employee record: {{ e()!.status }}</span> }</div>
+              @if (isAdmin()) { <button class="go btn-link-plain" (click)="ask('hr')">{{ p()!.hr ? 'Edit' : 'Record' }}</button> }
             </li>
           }
         </ul>
       </div>
 
-      <div class="panel">
-        <h3 class="sub-heading">Leave Adjustments</h3>
-        @for (l of t.adj.items; track l.from) {
-          <div class="leave"><b>{{ l.type }}</b><span>{{ l.from | date: 'd MMM' }} – {{ l.to | date: 'd MMM y' }}</span><em>+{{ l.days }} days</em></div>
-        } @empty {
-          <p class="muted">No eligible leave. {{ s().leaveTypes.join(' or ') }} of {{ s().leaveMinConsecutiveDays }}+ consecutive days would move the end date.</p>
-        }
-      </div>
     </aside>
   </div>
 
   @if (action(); as a) {
     <div class="backdrop" (click)="action.set(null)">
       <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="actTitle" (click)="$event.stopPropagation()">
-        <div class="dialog-head"><h4 id="actTitle">{{ a === 'initial' ? 'Initial meeting' : a === 'hod' ? 'Hand review to HOD' : a === 'exit' ? 'Close probation on exit' : 'Reopen for correction' }}</h4>
+        <div class="dialog-head"><h4 id="actTitle">{{ a === 'initial' ? 'Probation Initiation Form' : a === 'hod' ? 'Hand review to HOD' : a === 'admin' ? 'Admin takeover' : a === 'applicable' ? (t.applicable ? 'Mark probation not applicable' : 'Make probation applicable') : a === 'hr' ? 'Outcome Confirmation Form' : a === 'exit' ? 'Close probation on exit' : a === 'back' ? 'Send back to RM' : a === 'duration' ? 'Change probation duration' : 'Reopen for correction' }}</h4>
           <button class="btn-close-popup" (click)="action.set(null)" aria-label="Close"><i class="fa-solid fa-xmark"></i></button></div>
         <div class="dialog-body">
           <p class="muted">@switch (a) {
             @case ('hod') { {{ hod() }} (head of {{ e()!.department }}) will own the review instead of {{ e()!.manager }}. }
             @case ('initial') { Appendix F Part 1. Agreed between {{ reviewer() || 'the line manager' }} and {{ e()!.name }}; reviewed at the probation review. }
             @case ('exit') { The probation closes with the exit date and reason. No review or decision follows. }
-            @default { The {{ p()!.outcome?.toLowerCase() }} outcome is cleared and the review goes back to {{ reviewer() || 'the RM' }}. The audit trail keeps both. }
+            @case ('admin') { Exception: {{ e()!.manager || 'the RM' }} is unavailable, so you ({{ role() }}) take over the review and decision. Your name and reason are logged. }
+            @case ('applicable') { {{ t.applicable ? 'Rare exception: no reviews, reminders or notifications run for ' + e()!.name + '.' : 'Probation restarts tracking from the joining date.' }} }
+            @case ('hr') { HR processing of the {{ p()!.outcome?.toLowerCase() }} outcome. }
+            @case ('duration') { For exceptions only (HR Q04). The end date is recalculated from the joining date; leave and holidays never move it. }
+            @case ('back') { The {{ p()!.pending?.d?.outcome }} outcome is not approved. The review goes back to {{ reviewer() || 'the RM' }} to revise and resubmit. }
+            @default { HR clears the {{ p()!.outcome?.toLowerCase() }} outcome and the review goes back to {{ reviewer() || 'the RM' }}. The employee, RM and HR are notified; the audit trail keeps both. }
           }</p>
+          @if (a === 'hr') {
+            <div class="field mb-3"><label class="form-label" for="hrb">HR received by<span class="req">*</span></label>
+              <input id="hrb" class="form-control" [(ngModel)]="recvBy" [class.is-invalid]="actTried && !recvBy.trim()" /></div>
+            <div class="field mb-3"><label class="form-label" for="hrd">Date received<span class="req">*</span></label>
+              <input id="hrd" class="form-control" type="date" [(ngModel)]="actDate" [class.is-invalid]="actTried && !actDate" /></div>
+            <div class="field"><label class="form-label" for="hri">{{ p()!.outcome === 'Confirmed' ? 'Confirmation issued' : 'Letter issued' }} <span class="opt">(optional)</span></label>
+              <input id="hri" class="form-control" type="date" [(ngModel)]="issuedOn" /></div>
+          }
           @if (a === 'initial') {
-            <div class="field mb-3"><label class="form-label" for="imd">Meeting date<span class="req">*</span></label>
+            <div class="field mb-3"><span class="form-label">Was the initial discussion done?<span class="req">*</span></span>
+              <div class="yn" role="radiogroup" aria-label="Initial discussion done">
+                @for (v of ['Yes', 'No']; track v) { <button type="button" role="radio" [class.on]="held === v" [attr.aria-checked]="held === v" (click)="held = $any(v)">{{ v }}</button> }
+              </div></div>
+            <div class="field mb-3"><label class="form-label" for="imd">{{ held === 'Yes' ? 'Meeting date' : 'Date noted' }}<span class="req">*</span></label>
               <input id="imd" class="form-control" type="date" [min]="t.start" [max]="today" [(ngModel)]="actDate" [class.is-invalid]="actTried && !actDate" /></div>
+            @if (held === 'Yes') {
             <div class="field mb-3"><label class="form-label" for="imo">Section A: Objectives<span class="req">*</span></label>
               <textarea id="imo" class="form-control" rows="4" placeholder="One objective per line" [(ngModel)]="objectives" [class.is-invalid]="actTried && !objectives.trim()"></textarea></div>
             <div class="field"><label class="form-label" for="imp">Section B: Development plan<span class="req">*</span></label>
               <textarea id="imp" class="form-control" rows="3" placeholder="Training, support, buddy" [(ngModel)]="development" [class.is-invalid]="actTried && !development.trim()"></textarea></div>
+            }
           }
           @if (a === 'exit') {
             <div class="field mb-3"><label class="form-label" for="xd">Exit date<span class="req">*</span></label>
               <input id="xd" class="form-control" type="date" [min]="t.start" [(ngModel)]="actDate" [class.is-invalid]="actTried && !actDate" /></div>
           }
-          @if (a !== 'initial') {
+          @if (a === 'duration' || a === 'reopen') {
+            <div class="field mb-3"><label class="form-label" for="dm">{{ a === 'reopen' ? 'Corrected duration (optional)' : 'Duration' }}@if (a === 'duration') {<span class="req">*</span>}</label>
+              <select id="dm" class="form-select" [(ngModel)]="actMonths" [disabled]="a === 'reopen' && !!p()!.extendedTo">
+                @if (a === 'reopen') { <option [ngValue]="0">No change ({{ t.months }} months)</option> }
+                @for (m of [1,2,3,4,5,6]; track m) { <option [ngValue]="m">{{ m }} month{{ m > 1 ? 's' : '' }}</option> }
+              </select>
+              @if (a === 'reopen' && p()!.extendedTo) { <small class="muted">An extended end date can't be changed (HR Q16).</small> }</div>
+          }
+          @if (a !== 'initial' && a !== 'hr') {
           <div class="field"><label class="form-label" for="xr">Reason<span class="req">*</span></label>
             <textarea id="xr" class="form-control" rows="3" [(ngModel)]="actReason" [class.is-invalid]="actTried && !actReason.trim()"
-                      [placeholder]="a === 'hod' ? 'e.g. RM on long leave' : a === 'exit' ? 'e.g. Resigned' : 'What needs correcting'"></textarea></div>
+                      [placeholder]="a === 'hod' ? 'e.g. RM on long leave' : a === 'exit' ? 'e.g. Resigned' : a === 'back' ? 'What the RM should revise' : a === 'duration' ? 'e.g. Senior hire, agreed 6 months' : a === 'admin' ? 'e.g. RM left; HOD on leave' : a === 'applicable' ? 'e.g. Internal transfer, already confirmed' : 'What needs correcting'"></textarea></div>
           }
         </div>
         <div class="dialog-foot"><button class="btn btn-cancel" (click)="action.set(null)">Cancel</button>
-          <button class="btn btn-primary" (click)="act()">{{ a === 'initial' ? 'Save Initial Meeting' : a === 'hod' ? 'Hand to HOD' : a === 'exit' ? 'Close Probation' : 'Reopen' }}</button></div>
+          <button class="btn btn-primary" (click)="act()">{{ a === 'initial' ? 'Save Initiation Form' : a === 'hod' ? 'Hand to HOD' : a === 'exit' ? 'Close Probation' : a === 'back' ? 'Send Back to RM' : a === 'duration' ? 'Save Duration' : a === 'admin' ? 'Take Over Review' : a === 'applicable' ? 'Save' : a === 'hr' ? 'Save HR Record' : 'Reopen' }}</button></div>
       </div>
     </div>
   }

@@ -4,8 +4,8 @@ import { copyFor } from '../notification-copy';
 import { EventKey, EVENTS, probationSettings, Role, ROLES } from '../probation';
 
 const GROUPS: { title: string; keys: EventKey[] }[] = [
-  { title: 'Probation', keys: ['started', 'reminder', 'leaveAdjusted'] },
-  { title: 'Reviews', keys: ['reviewOpen', 'reviewSubmitted', 'overdue'] },
+  { title: 'Probation', keys: ['started', 'formSent', 'initiated', 'reminder', 'ended'] },
+  { title: 'Reviews', keys: ['reviewOpen', 'reviewSubmitted', 'overdue', 'approvalNeeded', 'sentBack', 'corrected', 'approved'] },
   { title: 'Outcomes', keys: ['confirmed', 'extended', 'terminated'] },
   { title: 'Letters', keys: ['letterIssued', 'deliveryFailed'] },
 ];
@@ -33,7 +33,7 @@ export class NotificationDesignsComponent {
   recipients = computed(() => this.s().recipients[this.event()]);
   sent = computed(() => this.recipients().includes(this.role()));
   copy = computed(() => copyFor(this.event(), this.role(), SAMPLE));
-  greeting = computed(() => this.role() === 'Employee' ? 'Hi Narayan,' : this.role() === 'RM' ? 'Hi Suchi,' : this.role() === 'HR' ? 'Hi HR team,' : 'Hi Payroll team,');
+  greeting = computed(() => this.role() === 'Employee' ? 'Hi Narayan,' : this.role() === 'RM' ? 'Hi Suchi,' : this.role() === 'HR' ? 'Hi HR team,' : this.role() === 'HOD' ? 'Hi Pardeep,' : this.role() === 'Admin' ? 'Hi Admin,' : 'Hi Payroll team,');
   // key facts card shown in the email under the message
   facts = computed<[string, string][]>(() => {
     const e = this.event();

@@ -2,10 +2,11 @@
   <div class="page-head">
     <div>
       <a class="crumb" [routerLink]="['/probation/view', code]"><i class="fa-solid fa-arrow-left"></i>{{ e()!.name }}'s probation</a>
-      <h2 class="page-main-heading">RM Review</h2>
-      <p class="sub">Rate {{ e()!.name }}'s probation and decide the outcome.@if (p()!.extendedTo) { This is the review for the extended probation. }</p>
+      <h2 class="page-main-heading">{{ final() ? 'Final Review (Extended)' : 'First Review (3-Month)' }}</h2>
+      <p class="sub">Rate {{ e()!.name }}'s probation and decide the outcome.@if (final()) { Decide whether to confirm after the extension. }@if (!canEdit()) { View only. }</p>
     </div>
-    @if (locked()) { <span class="pill ok"><i class="fa-solid fa-lock"></i>Submitted {{ r().submittedOn | date: 'd MMM y' }}</span> }
+    @if (r().submittedOn) { <div class="head-acts"><span class="pill ok"><i class="fa-solid fa-lock"></i>Submitted {{ r().submittedOn | date: 'd MMM y' }}</span>
+      <button class="btn btn-cancel no-print" (click)="pdf()"><i class="fa-solid fa-file-pdf"></i>Download PDF</button></div> }
   </div>
 
   @if (!open()) {
@@ -47,7 +48,10 @@
 
         <section class="panel">
             <h3 class="sub-heading">Objectives</h3>
-            @if (p()!.initial; as im) {
+            @if (final() && goals()) {
+              <dl class="obj"><div><dt>Goals set for the extension</dt><dd>{{ goals() }}</dd></div></dl>
+            }
+            @if (p()!.initial?.held === 'Yes' ? p()!.initial : null; as im) {
               <dl class="obj">
                 <div><dt>Objectives set at the initial meeting ({{ im.on | date: 'd MMM y' }})</dt><dd>{{ im.objectives }}</dd></div>
                 <div><dt>Development plan</dt><dd>{{ im.development }}</dd></div>
@@ -75,14 +79,14 @@
 
         <section class="panel">
             <h3 class="sub-heading">Outcome</h3>
-            <p class="hint">Based on your ratings the policy suggests <b class="sg" [attr.data-o]="suggested()">{{ suggested() }}</b>@if (avg()) { (average {{ avg().toFixed(1) }}) }. Your submission is the final decision; HR can reopen it if a correction is needed.</p>
+            <p class="hint">Based on your ratings the policy suggests <b class="sg" [attr.data-o]="suggested()">{{ suggested() }}</b>@if (avg()) { (average {{ avg().toFixed(1) }}) }. Your outcome goes to {{ chain().join(' then ') }} for approval; an approver can send it back to you.</p>
             <div class="outcomes" role="radiogroup" aria-label="Outcome">
-              @for (o of outcomes; track o) {
+              @for (o of outcomes(); track o) {
                 <button type="button" role="radio" class="oc" [attr.data-o]="o" [class.on]="r().recommendation === o" [attr.aria-checked]="r().recommendation === o"
                         [disabled]="locked() || (o === 'Extend' && !canExtend())" (click)="recommend(o)">
                   <i class="fa-solid" [class.fa-circle-check]="o === 'Confirm'" [class.fa-route]="o === 'Extend'" [class.fa-circle-xmark]="o === 'Terminate'"></i>
-                  <b>{{ o === 'Extend' ? 'Extend probation' : o }}</b>
-                  <span>{{ o === 'Confirm' ? 'Make the employment permanent' : o === 'Extend' ? (canExtend() ? 'Up to ' + s().maxExtensionMonths + ' months, once' : 'Extension limit reached') : 'End employment at probation' }}</span>
+                  <b>{{ o === 'Extend' ? 'Extend probation' : final() ? (o === 'Confirm' ? 'Confirm: Yes' : 'Confirm: No') : o }}</b>
+                  <span>{{ o === 'Confirm' ? 'Make the employment permanent' : o === 'Extend' ? (canExtend() ? 'Up to ' + room() + ' month' + (room() > 1 ? 's' : '') + ', once (6 months max in total)' : 'Extension limit reached') : 'End employment at probation' }}</span>
                   @if (o === suggested()) { <em>Suggested</em> }
                 </button>
               }
@@ -100,13 +104,25 @@
             }
             @if (r().recommendation === 'Terminate') {
               <div class="field mt-3"><label class="form-label" for="rs">Reason<span class="req">*</span></label>
-                <textarea id="rs" class="form-control" rows="3" placeholder="Why the employee should not be confirmed" [(ngModel)]="r().reason" (ngModelChange)="touch()" [disabled]="locked()"
+                <textarea id="rs" class="form-control" rows="3" [placeholder]="final() ? 'Reasons and next steps' : 'Why the employee should not be confirmed'" [(ngModel)]="r().reason" (ngModelChange)="touch()" [disabled]="locked()"
                           [class.is-invalid]="tried() && empty(r().reason)"></textarea></div>
             }
             @if (r().recommendation && r().recommendation !== suggested() && !locked()) {
               <p class="note-info warn"><i class="fa-solid fa-triangle-exclamation"></i>This differs from the suggested outcome. Explain why in your assessment.</p>
             }
           </section>
+
+        <section class="panel">
+          <h3 class="sub-heading">Review date &amp; sign-off</h3>
+          <div class="follow">
+            <div class="field"><label class="form-label" for="rd">Review date<span class="req">*</span></label>
+              <input id="rd" class="form-control" type="date" [(ngModel)]="r().reviewDate" (ngModelChange)="touch()" [disabled]="locked()" [max]="today" [class.is-invalid]="tried() && !r().reviewDate" /></div>
+            <dl class="facts grow">
+              <div><dt>Manager</dt><dd>{{ r().submittedOn ? reviewer() + ' · signed ' + (r().submittedOn | date: 'd MMM y') : 'Signs on submit' }}</dd></div>
+              <div><dt>Employee</dt><dd>{{ p()!.ackOn ? e()!.name + ' · signed ' + (p()!.ackOn | date: 'd MMM y') : 'Signs after submission (My Probation)' }}</dd></div>
+            </dl>
+          </div>
+        </section>
 
         @if (!locked()) {
           <div class="bar">
@@ -117,7 +133,7 @@
             }
             <div class="btns">
               <button class="btn btn-cancel" (click)="draft()">Save Draft</button>
-              <button class="btn btn-primary" (click)="submit()"><i class="fa-solid fa-paper-plane"></i>Submit &amp; Decide</button>
+              <button class="btn btn-primary" (click)="submit()"><i class="fa-solid fa-paper-plane"></i>Submit &amp; Send to {{ chain()[0] }}</button>
             </div>
           </div>
         }
@@ -134,7 +150,7 @@
         @if (r().recommendation) { <div class="cmp"><span>Outcome</span><b class="sg" [attr.data-o]="r().recommendation">{{ r().recommendation }}{{ r().recommendation === 'Extend' ? ' · ' + r().extendMonths + 'm' : '' }}</b></div> }
         <dl class="facts">
           <div><dt>Employee</dt><dd>{{ e()!.name }}</dd></div>
-          <div><dt>Reviewer</dt><dd>{{ reviewer() || '—' }}@if (p()!.reviewer) { <small class="muted"> (HOD)</small> }</dd></div>
+          <div><dt>Reviewer</dt><dd>{{ reviewer() || '—' }}@if (p()!.reviewer) { <small class="muted"> ({{ p()!.reviewerRole || 'HOD' }})</small> }</dd></div>
           <div><dt>Probation ends</dt><dd>{{ t.end | date: 'd MMM y' }}</dd></div>
           <div><dt>Review due</dt><dd [class.bad]="t.daysLeft < 0">{{ t.daysLeft < 0 ? 'Overdue by ' + -t.daysLeft + ' days' : 'In ' + t.daysLeft + ' days' }}</dd></div>
         </dl>
@@ -145,11 +161,11 @@
   @if (confirming()) {
     <div class="backdrop" (click)="confirming.set(false)">
       <div class="dialog" role="alertdialog" aria-modal="true" (click)="$event.stopPropagation()">
-        <div class="dialog-head"><h4>Submit review?</h4>
+        <div class="dialog-head"><h4>Submit for approval?</h4>
           <button class="btn-close-popup" (click)="confirming.set(false)" aria-label="Close"><i class="fa-solid fa-xmark"></i></button></div>
-        <div class="dialog-body">This records the outcome{{ r().recommendation === 'Terminate' ? ' with immediate effect. No notification is sent for a termination' : ' and notifies the employee, RM, HOD and HR' }}. Only HR can reopen it.
+        <div class="dialog-body">The outcome goes to {{ chain().join(' then ') }} for approval. Once approved{{ r().recommendation === 'Terminate' ? ' it takes effect immediately; no notification is sent for a termination' : ', the employee, RM, HOD and HR are notified' }}.
           <p class="avg-line">Average rating: <b>{{ avg().toFixed(1) }}</b> / {{ s().scale.length }} · Outcome <b>{{ r().recommendation }}</b></p></div>
-        <div class="dialog-foot"><button class="btn btn-cancel" (click)="confirming.set(false)">Keep Editing</button><button class="btn btn-primary" (click)="confirm()">Submit</button></div>
+        <div class="dialog-foot"><button class="btn btn-cancel" (click)="confirming.set(false)">Keep Editing</button><button class="btn btn-primary" (click)="confirm()">Submit &amp; Send to {{ chain()[0] }}</button></div>
       </div>
     </div>
   }

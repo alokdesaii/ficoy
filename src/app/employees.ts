@@ -2,7 +2,7 @@ import { signal } from '@angular/core';
 
 export interface Employee {
   name: string; email: string; code: string; department: string; manager: string;
-  location: string; active: boolean; designation: string; joined: string; mobile: string; nationalId: string;
+  location: string; active: boolean; status?: 'Probation' | 'Permanent' | 'Terminated'; designation: string; joined: string; mobile: string; nationalId: string;
   documents: { type: string; file: string }[];
 }
 

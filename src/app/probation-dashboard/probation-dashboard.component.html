@@ -1,7 +1,7 @@
 <div class="page-head">
   <div>
     <h2 class="page-main-heading">Probation Dashboard</h2>
-    <p class="sub">{{ today | date: 'EEEE, d MMMM y' }}</p>
+    <p class="sub">{{ scope() }} · {{ today | date: 'EEEE, d MMMM y' }}</p>
   </div>
   <div class="d-flex gap-2">
     <a routerLink="/probation/list" class="btn btn-cancel"><i class="fa-solid fa-list"></i>All probations</a>
@@ -10,10 +10,10 @@
 
 <div class="kpis">
   <a class="k blue" routerLink="/probation/list"><span>On probation</span><b>{{ kpi().onProbation }}</b><small>open probations</small></a>
-  <a class="k warn" routerLink="/probation/list"><span>Reviews due</span><b>{{ kpi().reviewDue }}</b><small>in the review window</small></a>
-  <a class="k bad" routerLink="/probation/list"><span>Overdue</span><b>{{ kpi().overdue }}</b><small>past end date</small></a>
-  <a class="k pip" routerLink="/probation/list"><span>Extended</span><b>{{ kpi().extended }}</b><small>in an extension</small></a>
-  <div class="k ok"><span>Confirmed in {{ year }}</span><b>{{ kpi().confirmed }}</b><small>of {{ kpi().decided }} decided</small></div>
+  <a class="k warn" routerLink="/probation/list" [queryParams]="{ stage: 'Review Due' }"><span>Reviews due</span><b>{{ kpi().reviewDue }}</b><small>in the review window</small></a>
+  <a class="k bad" routerLink="/probation/list" [queryParams]="{ stage: 'Overdue' }"><span>Overdue</span><b>{{ kpi().overdue }}</b><small>past end date</small></a>
+  <a class="k pip" routerLink="/probation/list" [queryParams]="{ stage: 'Extended' }"><span>Extended</span><b>{{ kpi().extended }}</b><small>in an extension</small></a>
+  <a class="k ok" routerLink="/probation/list" [queryParams]="{ stage: 'Confirmed' }"><span>Confirmed in {{ year }}</span><b>{{ kpi().confirmed }}</b><small>of {{ kpi().decided }} decided</small></a>
   <div class="k khaki"><span>Confirmation rate</span><b>{{ kpi().decided ? kpi().rate + '%' : '—' }}</b><small>this year</small></div>
 </div>
 

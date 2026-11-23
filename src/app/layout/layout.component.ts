@@ -5,15 +5,18 @@ import { Title } from '@angular/platform-browser';
 import { theme, toggleTheme } from '../theme';
 import { photo } from '../profile';
 import { feed, markRead, readIds, unread } from '../notifications';
+import { FormsModule } from '@angular/forms';
+import { VIEW_AS, ViewRole, viewRole } from '../probation';
 
 @Component({
   selector: 'app-layout',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, DatePipe],
+  imports: [FormsModule, RouterOutlet, RouterLink, RouterLinkActive, DatePipe],
   templateUrl: './layout.component.html',
   styleUrl: './layout.component.scss',
 })
 export class LayoutComponent {
-  private router = inject(Router);
+  router = inject(Router);
+  viewRole = viewRole; viewAs = VIEW_AS; roles = Object.keys(VIEW_AS) as ViewRole[];
   title = inject(Title);
   today = new Date();
   theme = theme;

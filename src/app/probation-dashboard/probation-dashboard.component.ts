@@ -1,7 +1,7 @@
 import { Component, computed } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { addDays, milestones, probations, probationSettings, timeline } from '../probation';
+import { actor, addDays, inScope, milestones, probations, probationSettings, timeline, viewRole } from '../probation';
 import { employees } from '../employees';
 import { leaves } from '../leaves';
 
@@ -17,10 +17,12 @@ export class ProbationDashboardComponent {
   today = new Date().toISOString().slice(0, 10);
   year = this.today.slice(0, 4);
 
-  rows = computed(() => probations().map(p => {
+  // RM: reportees only · Admin: everyone (final list §4)
+  scope = computed(() => viewRole() === 'Admin' ? 'All employees on probation' : viewRole() === 'RM' ? `Your reportees, ${actor()}` : viewRole() === 'HOD' ? `Your department, ${actor()}` : 'Your probation');
+  rows = computed(() => probations().filter(inScope).map(p => {
     const e = employees().find(x => x.name === p.employee)!;
-    return { p, e, t: timeline(p, e.joined, leaves(), probationSettings(), this.today) };
-  }).filter(r => !r.t.exempt));
+    return { p, e, t: timeline(p, e.joined, probationSettings(), this.today) };
+  }).filter(r => !r.t.exempt && r.t.applicable));
   open = computed(() => this.rows().filter(r => !r.p.outcome));
 
   kpi = computed(() => {

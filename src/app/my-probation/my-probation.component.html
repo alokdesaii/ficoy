@@ -46,7 +46,7 @@
         </ol>
   </section>
 
-  @if (p()!.initial; as im) {
+  @if (p()!.initial?.held === 'Yes' ? p()!.initial : null; as im) {
     <section class="panel objsec">
       <h3 class="sub-heading">Your Objectives</h3>
       <p class="help">Agreed with {{ im.by }} on {{ im.on | date: 'd MMM y' }}. Your probation review checks whether these were met.</p>
@@ -61,9 +61,7 @@
           <div><dt>Started</dt><dd>{{ t.start | date: 'd MMM y' }}</dd></div>
           <div><dt>Review opens</dt><dd>{{ t.reviewOpens | date: 'd MMM y' }}</dd></div>
           <div><dt>{{ p()!.extendedTo ? 'Extended to' : 'Ends' }}</dt><dd>{{ t.end | date: 'd MMM y' }}</dd></div>
-          @if (t.adj.days) { <div><dt>Leave adjustment</dt><dd>+{{ t.adj.days }} days</dd></div> }
         </dl>
-        @if (t.adj.days) { <p class="small">Approved {{ t.adj.items[0].type.toLowerCase() }} moved your end date later.</p> }
       </div>
 
       <div class="panel">

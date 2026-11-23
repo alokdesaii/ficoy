@@ -9,6 +9,16 @@ const C: Record<EventKey, { tone: Copy['tone']; icon: string; cta: string; text:
   started: { tone: 'info', icon: 'fa-solid fa-flag', cta: 'View probation', text: {
     Employee: ['Welcome! Your probation has started', 'Your {months}-month probation runs from {start} to {end}. Your manager reviews it from {reviewOpens}.'],
     default: ['{name} started probation', '{name} ({designation}) is on probation from {start} to {end}.'] } },
+  initiated: { tone: 'info', icon: 'fa-solid fa-handshake', cta: 'View objectives', text: {
+    Employee: ['Your probation objectives are set', 'You and your manager agreed your objectives and development plan for the probation period.'],
+    default: ['{name}\'s probation has been initiated', 'The initial meeting is done; objectives and development plan are on record.'] } },
+  approved: { tone: 'ok', icon: 'fa-solid fa-stamp', cta: 'View outcome', text: {
+    default: ['{name}\'s probation outcome was approved', 'The {outcome} outcome has been approved and processed.'] } },
+  formSent: { tone: 'info', icon: 'fa-solid fa-handshake', cta: 'Open probation form', text: {
+    default: ['Set {name}\'s probation objectives', '{name} joined on {start}. Please hold the initial meeting and complete the probation form (objectives and development plan) within 7 days.'] } },
+  ended: { tone: 'info', icon: 'fa-solid fa-flag-checkered', cta: 'View probation', text: {
+    Employee: ['Your probation period ends today', 'Your probation ends on {end}, as scheduled.'],
+    default: ['{name}\'s probation ends today', 'Probation ends on {end}, as scheduled. Reviews: {reviews}.'] } },
   reminder: { tone: 'warn', icon: 'fa-regular fa-bell', cta: 'View probation', text: {
     Employee: ['Your probation ends in {daysLeft} days', 'Your probation ends on {end}. Your manager will complete your review before then.'],
     RM: ['{name}\'s probation ends in {daysLeft} days', 'Please complete your RM review for {name} before {end}.'],
@@ -34,9 +44,14 @@ const C: Record<EventKey, { tone: Copy['tone']; icon: string; cta: string; text:
     Employee: ['An update on your employment', 'Please read the attached letter. HR will contact you about next steps.'],
     Payroll: ['Termination: {name}', 'Process the final settlement. Last working day {lastDay}.'],
     default: ['{name} will not be confirmed', 'Employment ends {effective}.'] } },
-  leaveAdjusted: { tone: 'pip', icon: 'fa-regular fa-calendar-minus', cta: 'View timeline', text: {
-    Employee: ['Your probation end date moved', 'Approved leave added {days} days. Your probation now ends on {end}.'],
-    default: ['{name}\'s probation was adjusted', '{days} days of leave added. New end date {end}.'] } },
+  approvalNeeded: { tone: 'warn', icon: 'fa-solid fa-stamp', cta: 'Review outcome', text: {
+    default: ['Approve {name}\'s probation outcome', 'The RM submitted {outcome}. Please approve it or send it back to the RM.'] } },
+  sentBack: { tone: 'warn', icon: 'fa-solid fa-rotate-left', cta: 'Revise review', text: {
+    RM: ['{name}\'s outcome was sent back', 'Please revise your probation review and submit it again.'],
+    default: ['{name}\'s outcome was sent back to the RM', 'The RM revises the review and resubmits it.'] } },
+  corrected: { tone: 'warn', icon: 'fa-solid fa-rotate-left', cta: 'View probation', text: {
+    Employee: ['Your probation outcome is being corrected', 'Your manager will update your review. You\'ll be notified of the outcome.'],
+    default: ['{name}\'s outcome was reopened', 'HR reopened the decision for correction. The RM review is open again.'] } },
   deliveryFailed: { tone: 'bad', icon: 'fa-solid fa-envelope-circle-check', cta: 'Resend', text: {
     default: ['Email to {name} failed', 'A probation reminder bounced. Check the address and resend it.'] } },
   letterIssued: { tone: 'ok', icon: 'fa-regular fa-envelope-open', cta: 'Open letter', text: {

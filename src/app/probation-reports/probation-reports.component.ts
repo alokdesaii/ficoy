@@ -3,19 +3,21 @@ import { Component, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { formatDate } from '@angular/common';
-import { EVENTS, milestones, probationLog, probations, probationSettings, timeline } from '../probation';
+import { EVENTS, nextApprover, milestones, probationLog, probations, probationSettings, timeline } from '../probation';
 import { employees } from '../employees';
 import { departments } from '../departments';
 import { leaves } from '../leaves';
 import { exportCsv } from '../csv';
 
-type Key = 'upcoming' | 'pending' | 'extensions' | 'outcomes' | 'notifications' | 'audit';
+type Key = 'upcoming' | 'pending' | 'approvals' | 'exceptions' | 'extensions' | 'outcomes' | 'notifications' | 'audit';
 interface Col { h: string; k: string; num?: boolean; }
 interface Report { rows: Record<string, string | number>[]; cols: Col[]; summary: string; date: string; }
 
 const REPORTS: { k: Key; t: string; i: string; d: string }[] = [
   { k: 'upcoming', t: 'Upcoming End Dates', i: 'fa-regular fa-calendar', d: 'Open probations by end date' },
   { k: 'pending', t: 'Pending Reviews', i: 'fa-regular fa-clipboard', d: 'Reviews not yet submitted' },
+  { k: 'approvals', t: 'Pending Approvals', i: 'fa-solid fa-stamp', d: 'Outcomes waiting on HOD / Admin' },
+  { k: 'exceptions', t: 'Exception History', i: 'fa-solid fa-user-gear', d: 'Takeovers, reopens, duration and applicability changes' },
   { k: 'extensions', t: 'Extensions', i: 'fa-solid fa-route', d: 'Extended probations and their second review' },
   { k: 'outcomes', t: 'Final Outcomes', i: 'fa-solid fa-gavel', d: 'Confirmations, extensions, terminations' },
   { k: 'notifications', t: 'Notification History', i: 'fa-regular fa-bell', d: 'Everything sent, to whom' },
@@ -36,7 +38,7 @@ export class ProbationReportsComponent {
 
   private base = computed(() => probations().map(p => {
     const e = employees().find(x => x.name === p.employee)!;
-    return { p, e, t: timeline(p, e.joined, leaves(), probationSettings(), this.today) };
+    return { p, e, t: timeline(p, e.joined, probationSettings(), this.today) };
   }).filter(r => !r.t.exempt && (!this.dept() || r.e.department === this.dept())));
   inRange = (d?: string) => !!d && (!this.from() || d >= this.from()) && (!this.to() || d <= this.to());
   fmt = (d?: string) => d ? formatDate(d, 'dd MMM y', 'en') : '—';
@@ -46,8 +48,8 @@ export class ProbationReportsComponent {
     switch (this.key()) {
       case 'upcoming': {
         const r = rows.filter(x => !x.p.outcome && this.inRange(x.t.end)).sort((a, b) => a.t.end.localeCompare(b.t.end));
-        return { date: 'end date', cols: [{ h: 'Employee', k: 'name' }, { h: 'Department', k: 'dept' }, { h: 'RM', k: 'rm' }, { h: 'End date', k: 'end' }, { h: 'Days left', k: 'left', num: true }, { h: 'Leave adj.', k: 'adj', num: true }, { h: 'Stage', k: 'stage' }],
-          rows: r.map(x => ({ name: x.e.name, code: x.e.code, dept: x.e.department, rm: x.e.manager || '—', end: this.fmt(x.t.end), left: x.t.daysLeft, adj: x.t.adj.days ? `+${x.t.adj.days}` : '—', stage: x.t.stage })),
+        return { date: 'end date', cols: [{ h: 'Employee', k: 'name' }, { h: 'Department', k: 'dept' }, { h: 'RM', k: 'rm' }, { h: 'End date', k: 'end' }, { h: 'Days left', k: 'left', num: true }, { h: 'Stage', k: 'stage' }],
+          rows: r.map(x => ({ name: x.e.name, code: x.e.code, dept: x.e.department, rm: x.e.manager || '—', end: this.fmt(x.t.end), left: x.t.daysLeft, stage: x.t.stage })),
           summary: `${r.length} open · ${r.filter(x => x.t.daysLeft >= 0 && x.t.daysLeft <= 30).length} ending within 30 days · ${r.filter(x => x.t.daysLeft < 0).length} overdue` };
       }
       case 'pending': {
@@ -56,17 +58,29 @@ export class ProbationReportsComponent {
           rows: r.map(x => ({ name: x.e.name, code: x.e.code, rm: x.e.manager || '—', end: this.fmt(x.t.end), rmr: x.p.rmReviewOn ? 'Submitted' : 'Pending', over: x.t.daysLeft < 0 ? `${-x.t.daysLeft} days` : '—' })),
           summary: `${r.length} RM reviews outstanding · ${r.filter(x => x.t.daysLeft < 0).length} overdue` };
       }
+      case 'approvals': {
+        const r = rows.filter(x => x.p.pending);
+        return { date: 'submitted date', cols: [{ h: 'Employee', k: 'name' }, { h: 'RM', k: 'rm' }, { h: 'Outcome', k: 'out' }, { h: 'Approved by', k: 'done' }, { h: 'Waiting on', k: 'next' }],
+          rows: r.map(x => ({ name: x.e.name, code: x.e.code, rm: x.e.manager || '—', out: x.p.pending!.d.outcome, done: x.p.pending!.approved.map(a => `${a.role}: ${a.by}`).join(', ') || '—', next: nextApprover(x.p) ?? '—' })),
+          summary: `${r.length} outcomes awaiting approval` };
+      }
+      case 'exceptions': {
+        const r = probationLog().filter(l => /Exception|reopened|duration changed|sent back/i.test(l.action) && this.inRange(l.at.slice(0, 10)) && (!this.dept() || employees().find(e => e.name === l.employee)?.department === this.dept()));
+        return { date: 'action date', cols: [{ h: 'When', k: 'when' }, { h: 'Actor', k: 'by' }, { h: 'Employee', k: 'name' }, { h: 'Exception and reason', k: 'action' }],
+          rows: r.map(l => ({ when: formatDate(l.at, 'dd MMM y, hh:mm a', 'en'), by: l.by, name: l.employee, code: employees().find(e => e.name === l.employee)?.code ?? '', action: l.action })),
+          summary: `${r.length} exception actions recorded this session` };
+      }
       case 'extensions': {
         const r = rows.filter(x => x.p.extendedTo && this.inRange(x.p.extendedTo));
         return { date: 'new end date', cols: [{ h: 'Employee', k: 'name' }, { h: 'RM', k: 'rm' }, { h: 'Original end', k: 'orig' }, { h: 'Extended by', k: 'by', num: true }, { h: 'New end', k: 'end' }, { h: 'RM review', k: 'rmr' }, { h: 'Stage', k: 'stage' }],
-          rows: r.map(x => { const d = x.p.decisions?.find(d => d.outcome === 'Extend'); return { name: x.e.name, code: x.e.code, rm: x.e.manager || '—', orig: this.fmt(x.t.adjustedEnd), by: d?.extendMonths ? `${d.extendMonths} mo` : '—', end: this.fmt(x.p.extendedTo), rmr: x.p.rmReviewOn ? 'Submitted' : 'Pending', stage: x.t.stage }; }),
+          rows: r.map(x => { const d = x.p.decisions?.find(d => d.outcome === 'Extend'); return { name: x.e.name, code: x.e.code, rm: x.e.manager || '—', orig: this.fmt(x.t.baseEnd), by: d?.extendMonths ? `${d.extendMonths} mo` : '—', end: this.fmt(x.p.extendedTo), rmr: x.p.rmReviewOn ? 'Submitted' : 'Pending', stage: x.t.stage }; }),
           summary: `${r.length} extended · ${r.filter(x => !x.p.outcome).length} still open · ${r.filter(x => x.p.outcome === 'Confirmed').length} confirmed · ${r.filter(x => x.p.outcome === 'Terminated').length} terminated` };
       }
       case 'outcomes': {
         const r = rows.flatMap(x => {
           const ds = (x.p.decisions ?? []).map(d => ({ out: d.outcome === 'Confirm' ? 'Confirmed' : d.outcome === 'Extend' ? 'Extended' : 'Terminated', on: d.decidedOn, eff: d.effectiveOn, by: d.by, over: d.reason || '—' }));
           if ((!ds.length || x.p.outcome === 'Closed') && x.p.outcome) ds.push({ out: x.p.outcome, on: x.p.decidedOn!, eff: x.p.decidedOn!, by: 'HR', over: x.p.exitReason || '—' });
-          if (!ds.some(d => d.out === 'Extended') && x.p.extendedTo) ds.push({ out: 'Extended', on: x.t.adjustedEnd, eff: x.t.adjustedEnd, by: 'HR', over: '—' });
+          if (!ds.some(d => d.out === 'Extended') && x.p.extendedTo) ds.push({ out: 'Extended', on: x.t.baseEnd, eff: x.t.baseEnd, by: 'HR', over: '—' });
           return ds.filter(d => this.inRange(d.on)).map(d => ({ name: x.e.name, code: x.e.code, dept: x.e.department, ...d }));
         }).sort((a, b) => b.on.localeCompare(a.on));
         return { date: 'decision date', cols: [{ h: 'Employee', k: 'name' }, { h: 'Department', k: 'dept' }, { h: 'Outcome', k: 'out' }, { h: 'Decided', k: 'onF' }, { h: 'Effective', k: 'effF' }, { h: 'By', k: 'by' }, { h: 'Reason', k: 'over' }],

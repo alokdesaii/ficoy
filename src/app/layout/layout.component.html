@@ -35,6 +35,12 @@
     </ol>
 
     <div class="topbar-right">
+      @if (router.url.startsWith('/probation')) {
+        <label class="view-as" title="Demo only: preview the probation module as each role">View as
+          <select class="form-select form-select-sm" [ngModel]="viewRole()" (ngModelChange)="viewRole.set($event)">
+            @for (r of roles; track r) { <option [value]="r">{{ r }} · {{ viewAs[r] }}</option> }
+          </select></label>
+      }
       <span class="today">{{ today | date: 'EEE MMM d y' }}</span>
       <div class="bell-wrap">
         <button class="theme-btn bell" (click)="bellOpen = !bellOpen; profileOpen = false" [attr.aria-label]="unread().length + ' unread notifications'" aria-haspopup="true" [attr.aria-expanded]="bellOpen">

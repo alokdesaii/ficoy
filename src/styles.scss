@@ -178,6 +178,14 @@ body { font-family: Inter, system-ui, sans-serif; font-size: 14px; color: var(--
   app-payslip .slip, app-payslip .slip * { visibility: visible; }
   app-payslip .slip { position: absolute; inset: 0 auto auto 0; width: 100%; padding: 24px; color: #000; }
 }
+// printing a submitted probation form: the review page only, no app chrome
+@media print {
+  body:has(app-probation-review) * { visibility: hidden; }
+  app-probation-review, app-probation-review * { visibility: visible; }
+  app-probation-review { position: absolute; inset: 0 auto auto 0; width: 100%; padding: 16px; }
+  app-probation-review .no-print, app-probation-review .crumb, app-probation-review .add-note { display: none !important; }
+  app-probation-review .layout { grid-template-columns: 1fr; } app-probation-review .side { position: static; }
+}
 // printing a letter: show only the letter
 @media print {
   body:has(app-letter-templates) * { visibility: hidden; }

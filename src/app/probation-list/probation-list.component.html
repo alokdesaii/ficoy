@@ -28,6 +28,9 @@
     <select class="form-select" aria-label="Ending within" [ngModel]="within()" (ngModelChange)="within.set(+$event)">
       <option [value]="0">Any end date</option><option [value]="7">Ending in 7 days</option><option [value]="30">Ending in 30 days</option><option [value]="60">Ending in 60 days</option>
     </select>
+    @if (stage() || search() || dept() || within()) {
+      <button class="btn btn-cancel" (click)="viewAll()"><i class="fa-solid fa-list"></i>View All<span class="visually-hidden"> probations, clear filters</span></button>
+    }
     @if (filtering) { <button class="btn btn-cancel" (click)="clear()">Clear</button> }
     <span class="count">{{ filtered().length }} of {{ rows().length }}</span>
   </div>
@@ -42,12 +45,11 @@
           <tr>
             <td><div class="who"><span class="av">{{ initials(r.e.name) }}</span>
               <div><b>{{ r.e.name }}</b><span>{{ r.e.designation }} · {{ r.p.type }}</span></div></div></td>
-            <td class="nowrap" [class.dash]="!r.e.manager">{{ r.e.manager || '—' }}</td>
+            <td class="nowrap" [class.dash]="!r.e.manager">@if (r.p.reviewer) { {{ r.p.reviewer }}<small class="d-block text-muted">HOD takeover · RM {{ r.e.manager }}</small> } @else { {{ r.e.manager || '—' }} }</td>
             <td class="num">{{ r.t.start | date: 'dd MMM yy' }}</td>
             <td class="num">
               {{ r.t.end | date: 'dd MMM yy' }}
-              @if (r.p.extendedTo) { <span class="badge-mini warn" title="Extended from {{ r.t.adjustedEnd | date: 'dd MMM y' }}">Extended</span> }
-              @else if (r.t.adj.days) { <span class="badge-mini" [title]="'Originally ' + (r.t.baseEnd | date: 'dd MMM y') + ' · ' + r.t.adj.items[0].type">+{{ r.t.adj.days }}d leave</span> }
+              @if (r.p.extendedTo) { <span class="badge-mini warn" title="Extended from {{ r.t.baseEnd | date: 'dd MMM y' }}">Extended</span> }
             </td>
             <td class="prog-col">
               @if (r.p.outcome) { <span class="muted small">Closed {{ r.p.decidedOn | date: 'dd MMM yy' }}</span> }

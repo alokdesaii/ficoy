@@ -17,15 +17,15 @@ export const feed = computed<Note[]>(() => {
   const out: Note[] = [];
   for (const p of probations()) {
     const e = employees().find(x => x.name === p.employee); if (!e) continue;
-    const t = timeline(p, e.joined, leaves(), s, today);
-    if (t.exempt) continue;
+    const t = timeline(p, e.joined, s, today);
+    if (t.exempt || !t.applicable) continue;
     const role: Role = e.manager === CURRENT_USER ? 'RM' : 'HR';
     const missing = p.rmReviewOn ? 'HR decision' : 'RM review';
     const ctx: Ctx = { name: e.name, designation: e.designation, start: fmt(t.start), end: fmt(t.end), reviewOpens: fmt(t.reviewOpens),
-      daysLeft: String(Math.max(0, t.daysLeft)), overdue: String(-t.daysLeft), missing, months: String(s.durations[p.type]),
+      daysLeft: String(Math.max(0, t.daysLeft)), overdue: String(-t.daysLeft), missing, months: String(t.months),
       reviews: p.rmReviewOn ? 'RM review submitted' : 'RM review pending',
-      effective: fmt(p.decisions?.at(-1)?.effectiveOn ?? p.decidedOn), newEnd: fmt(p.extendedTo), days: String(t.adj.days),
-      outcome: p.outcome ?? '', today: fmt(today), lastDay: fmt(p.decisions?.at(-1)?.lastWorkingDay) };
+      effective: fmt(p.decisions?.at(-1)?.effectiveOn ?? p.decidedOn), newEnd: fmt(p.extendedTo),
+      outcome: p.outcome ?? p.pending?.d.outcome ?? '', today: fmt(today), lastDay: fmt(p.decisions?.at(-1)?.lastWorkingDay) };
     for (const m of milestones(p, t, s, today)) {
       if (!m.event || !m.done || !s.recipients[m.event].includes(role) || m.date < '2026-08-01') continue;
       const link = `/probation/view/${e.code}`;
@@ -38,4 +38,4 @@ export const feed = computed<Note[]>(() => {
 export const unread = computed(() => feed().filter(n => !readIds().has(n.id)));
 export const markRead = (ids: string[]) => readIds.update(s => new Set([...s, ...ids]));
 // "needs action" = something the signed-in user has to do
-export const actionable = (n: Note) => ['overdue', 'reviewOpen', 'deliveryFailed', 'reminder'].includes(n.event);
+export const actionable = (n: Note) => ['overdue', 'reviewOpen', 'deliveryFailed', 'reminder', 'formSent'].includes(n.event);

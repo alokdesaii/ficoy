@@ -22,7 +22,7 @@ export class MyProbationComponent {
 
   e = computed(() => employees().find(x => x.name === this.viewAs())!);
   p = computed(() => probations().find(x => x.employee === this.viewAs()));
-  t = computed(() => this.p() ? timeline(this.p()!, this.e().joined, leaves(), this.s(), this.today) : null);
+  t = computed(() => this.p() ? timeline(this.p()!, this.e().joined, this.s(), this.today) : null);
   ack() { acknowledge(this.viewAs(), this.today); }
   decided = computed(() => !!this.p()?.outcome);
   first = computed(() => this.viewAs().split(' ')[0]);
@@ -31,12 +31,11 @@ export class MyProbationComponent {
     const p = this.p(), t = this.t(); if (!p || !t) return [];
     const short = (d?: string) => d ? new Date(d + 'T00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '';
     return milestones(p, t, this.s(), this.today)
-      .filter(m => m.kind !== 'reminder' && !(m.kind === 'review' && m.label.startsWith('Overdue')))
+      .filter(m => m.kind !== 'reminder' && m.kind !== 'approval' && m.event !== 'formSent' && !(m.kind === 'review' && m.label.startsWith('Overdue')))
       .map(m => {
         const [label, desc, icon] =
-          m.kind === 'start' ? ['Probation started', `Your ${this.s().durations[p.type]}-month probation as ${this.e().designation} began.`, 'fa-solid fa-flag'] :
-          m.kind === 'meeting' ? [p.initial ? 'Objectives agreed' : 'Initial meeting', p.initial ? `You and ${p.initial.by} agreed your objectives and development plan.` : 'Your manager sets your objectives within your first week.', 'fa-solid fa-handshake'] :
-          m.kind === 'leave' ? [m.label.split(' · ')[0], `Approved leave moved your end date to ${short(t.end)}.`, 'fa-regular fa-calendar-minus'] :
+          m.kind === 'start' ? ['Probation started', `Your ${t.months}-month probation as ${this.e().designation} began.`, 'fa-solid fa-flag'] :
+          m.kind === 'meeting' ? [p.initial?.held === 'Yes' ? 'Objectives agreed' : 'Initial meeting', p.initial?.held === 'Yes' ? `You and ${p.initial!.by} agreed your objectives and development plan.` : 'Your manager sets your objectives within your first week.', 'fa-solid fa-handshake'] :
           m.kind === 'review' ? ['Manager review opened', `${this.e().manager || 'Your manager'} reviews your probation before ${short(addDays(m.date, this.s().reviewOpensDaysBefore))}.`, 'fa-regular fa-clipboard'] :
           m.kind === 'submitted' ? ['Manager review submitted', `${this.e().manager || 'Your manager'} completed their review.`, 'fa-solid fa-user-check'] :
           m.kind === 'extension' ? ['Probation extended', `New end date ${short(p.extendedTo)}. Your manager reviews you again before then.`, 'fa-solid fa-route'] :
@@ -60,6 +59,7 @@ export class MyProbationComponent {
     if (p.outcome === 'Terminated') return { tone: 'bad', title: 'Your probation has closed', text: 'Please read your letter from HR for next steps.' };
     if (p.extendedTo && !p.rmReviewOn) return { tone: 'pip', title: 'Your probation was extended', text: `It now ends on ${fmt(p.extendedTo)}. ${this.e().manager || 'Your manager'} will review you again before then.` };
     if (t.stage === 'In Probation') return { tone: 'info', title: 'You\'re on track', text: `${this.e().manager || 'Your manager'} reviews your probation from ${fmt(t.reviewOpens)}. Nothing for you to do.` };
+    // HR Q39: approval statuses are Admin-only; the employee just sees the review is complete
     if (!p.rmReviewOn) return { tone: 'warn', title: 'Your probation review is under way', text: `${this.e().manager || 'Your manager'} is completing your review, ${t.daysLeft < 0 ? 'which was due' : 'due by'} ${fmt(t.end)}.` };
     return { tone: 'info', title: 'Your review is complete', text: 'You\'ll be notified of the outcome.' };
   });

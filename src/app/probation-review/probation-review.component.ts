@@ -2,7 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { average, decide, effectiveFor, log, probations, reviewerOf, probationSettings, Recommendation, Review, reviewOf, RM_QUESTIONS, saveReview, suggest, timeline } from '../probation';
+import { actor, extensionRoom, viewRole, average, chainFor, submitOutcome, effectiveFor, log, probations, reviewerOf, probationSettings, Recommendation, Review, reviewOf, RM_QUESTIONS, saveReview, suggest, timeline } from '../probation';
 import { employees } from '../employees';
 import { leaves } from '../leaves';
 
@@ -20,28 +20,35 @@ export class ProbationReviewComponent {
   today = new Date().toISOString().slice(0, 10);
   s = probationSettings;
   questions = RM_QUESTIONS;
-  outcomes: Recommendation[] = ['Confirm', 'Extend', 'Terminate'];
+  // final review (after the one extension) only decides Confirm yes / no
+  outcomes = computed<Recommendation[]>(() => this.p()?.extendedTo ? ['Confirm', 'Terminate'] : ['Confirm', 'Extend', 'Terminate']);
+  final = computed(() => !!this.p()?.extendedTo);
+  goals = computed(() => this.p()?.decisions?.filter(d => d.outcome === 'Extend').at(-1)?.reason ?? '');
 
   e = computed(() => employees().find(x => x.code === this.code));
   p = computed(() => probations().find(x => x.employee === this.e()?.name));
-  t = computed(() => this.p() && this.e() ? timeline(this.p()!, this.e()!.joined, leaves(), this.s(), this.today) : null);
+  t = computed(() => this.p() && this.e() ? timeline(this.p()!, this.e()!.joined, this.s(), this.today) : null);
+  chain = computed(() => this.e() ? chainFor(this.e()!.name) : []);
   open = computed(() => !!this.t() && this.today >= this.t()!.reviewOpens);
 
   // working copy: saved draft or blank
   r = signal<Review>(this.blank());
   private blank(): Review {
     const name = employees().find(x => x.code === this.code)?.name ?? '';
-    return structuredClone(reviewOf(name, 'rm')) ?? { employee: name, by: 'rm', ratings: {}, notes: {}, answers: {} };
+    return structuredClone(reviewOf(name, 'rm')) ?? { employee: name, by: 'rm', ratings: {}, notes: {}, answers: {}, reviewDate: new Date().toISOString().slice(0, 10) };
   }
   empty = (v: string | undefined) => !v?.trim();
-  locked = computed(() => !!this.r().submittedOn);
+  // view-only unless you're the reviewer (RM, or HOD/Admin on takeover) or Admin
+  canEdit = computed(() => viewRole() === 'Admin' || this.reviewer() === actor());
+  locked = computed(() => !!this.r().submittedOn || !this.canEdit());
 
   // suggested outcome from the Settings thresholds
   suggested = computed(() => suggest(this.avg(), this.s()));
-  canExtend = computed(() => (this.p()?.extendedTo ? 1 : 0) < this.s().maxExtensions);
+  room = computed(() => this.t() ? extensionRoom(this.t()!, this.s()) : 0);
+  canExtend = computed(() => (this.p()?.extendedTo ? 1 : 0) < this.s().maxExtensions && this.room() > 0);
   reviewer = computed(() => this.p() ? reviewerOf(this.p()!) : '');
   closed = computed(() => !!this.p()?.outcome);
-  months = computed(() => Array.from({ length: this.s().maxExtensionMonths }, (_, i) => i + 1));
+  months = computed(() => Array.from({ length: this.room() }, (_, i) => i + 1));
   recommend(o: Recommendation) {
     if (this.locked() || (o === 'Extend' && !this.canExtend())) return;
     this.r.update(r => ({ ...r, recommendation: o, extendMonths: o === 'Extend' ? (r.extendMonths ?? 1) : undefined }));
@@ -62,6 +69,7 @@ export class ProbationReviewComponent {
     const noNote = this.s().criteria.filter(c => this.needsNote(c) && !r.notes[c]?.trim());
     if (noNote.length) m.push(`Explain low ratings for ${noNote.join(', ')}`);
     if (!r.objectivesMet) m.push('Say whether the objectives were met');
+    if (!r.reviewDate) m.push('Enter the review date');
     const q = this.questions.filter(x => this.needed(x.key) && !r.answers[x.key]?.trim());
     if (q.length) m.push(`Answer ${q.length} required question${q.length === 1 ? '' : 's'}`);
     if (!r.recommendation) m.push('Choose an outcome');
@@ -75,15 +83,17 @@ export class ProbationReviewComponent {
   touch() { this.r.update(r => ({ ...r })); }
   toggleNote(c: string) { this.showNote.update(s => { const n = new Set(s); n.has(c) ? n.delete(c) : n.add(c); return n; }); }
 
+  // ponytail: browser print → "Save as PDF"; server-rendered PDF if HR needs it emailed
+  pdf() { window.print(); }
   // ponytail: PUT /probations/:id/review once the endpoint is shared
   draft() { this.r.set(saveReview(this.r(), false)); this.savedMsg.set('Draft saved'); setTimeout(() => this.savedMsg.set(''), 2000); }
   submit() { this.tried.set(true); if (this.missing().length) { document.querySelector('.missing')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; } this.confirming.set(true); }
   confirm() {
-    // ponytail: POST /probations/:id/decision; the RM's submission is the final decision
+    // HR Q37: the RM's outcome goes to the HOD (when different) and Admin for approval
     const r = saveReview(this.r(), true), o = r.recommendation!, name = this.e()!.name, today = this.today;
     this.r.set(r);
-    log(name, this.reviewer(), `RM review submitted · ${o}${o === 'Extend' ? ` by ${r.extendMonths} month(s)` : ''}, effective ${effectiveFor(o, this.t()!.end, today)}`);
-    decide(name, { outcome: o, effectiveOn: effectiveFor(o, this.t()!.end, today), decidedOn: today, by: this.reviewer(),
+    log(name, this.reviewer(), `RM review submitted for approval · ${o}${o === 'Extend' ? ` by ${r.extendMonths} month(s)` : ''}, effective ${effectiveFor(o, this.t()!.end, today)}`);
+    submitOutcome(name, { outcome: o, effectiveOn: effectiveFor(o, this.t()!.end, today), decidedOn: today, by: this.reviewer(),
       extendMonths: o === 'Extend' ? r.extendMonths : undefined, lastWorkingDay: o === 'Terminate' ? today : undefined,
       reason: o === 'Terminate' ? r.reason : o === 'Extend' ? r.extensionFocus : undefined });
     this.confirming.set(false);

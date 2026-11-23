@@ -2,9 +2,8 @@ import { Component, computed, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { addDays, DEFAULT_SETTINGS, EMPLOYMENT_TYPES, EventKey, EVENTS, probationEnd, ProbationSettings, probationSettings, Role, ROLES } from '../probation';
-import { LEAVE_TYPES } from '../leaves';
 
-type Tab = 'general' | 'reviews' | 'extension' | 'leave' | 'notify';
+type Tab = 'general' | 'reviews' | 'extension' | 'notify';
 
 @Component({
   selector: 'app-probation-settings',
@@ -17,11 +16,10 @@ export class ProbationSettingsComponent {
     { k: 'general', t: 'General', i: 'fa-solid fa-sliders' },
     { k: 'reviews', t: 'Reviews & Ratings', i: 'fa-regular fa-star' },
     { k: 'extension', t: 'Extension', i: 'fa-solid fa-route' },
-    { k: 'leave', t: 'Leave Adjustment', i: 'fa-regular fa-calendar-minus' },
     { k: 'notify', t: 'Reminders & Notifications', i: 'fa-regular fa-bell' },
   ];
   tab = signal<Tab>('general');
-  types = EMPLOYMENT_TYPES; leaveTypes = LEAVE_TYPES; events = EVENTS; roles = ROLES;
+  types = EMPLOYMENT_TYPES; events = EVENTS; roles = ROLES;
 
   d = signal<ProbationSettings>(structuredClone(probationSettings()));
   saved = signal(false);
@@ -56,7 +54,6 @@ export class ProbationSettingsComponent {
   moveCriterion(i: number, dir: -1 | 1) { const c = this.d().criteria; [c[i], c[i + dir]] = [c[i + dir], c[i]]; this.touch(); }
   addReminder() { const n = Number(this.newReminder); if (n >= 0 && !this.d().reminderDays.includes(n)) { this.d().reminderDays.push(n); this.d().reminderDays.sort((a, b) => b - a); this.newReminder = null; this.touch(); } }
   removeReminder(n: number) { this.d().reminderDays = this.d().reminderDays.filter(x => x !== n); this.touch(); }
-  toggleLeave(t: string) { const l = this.d().leaveTypes; this.d().leaveTypes = l.includes(t) ? l.filter(x => x !== t) : [...l, t]; this.touch(); }
   has(e: EventKey, r: Role) { return this.d().recipients[e].includes(r); }
   toggleRecipient(e: EventKey, r: Role) { const l = this.d().recipients[e]; this.d().recipients[e] = l.includes(r) ? l.filter(x => x !== r) : [...l, r]; this.touch(); }
 

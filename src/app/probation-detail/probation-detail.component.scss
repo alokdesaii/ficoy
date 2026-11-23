@@ -32,7 +32,7 @@
   .state { color: var(--muted); font-size: 12px; }
   li.done { .dot { background: var(--brand-tint); border-color: var(--brand-tint); color: var(--brand-text); } b { color: var(--heading); } .when { color: var(--text-2); } .state { color: var(--ok); } }
   li.next .dot { border-color: var(--warn-fill); color: var(--warn); box-shadow: 0 0 0 4px var(--warn-bg); }
-  li[data-k='leave'].done .dot { background: var(--purple-bg); border-color: var(--purple-bg); color: var(--purple-ink); }
+  li[data-k='approval'].done .dot { background: var(--purple-bg); border-color: var(--purple-bg); color: var(--purple-ink); }
   li[data-k='outcome'].done .dot, li[data-k='submitted'].done .dot { background: var(--ok-bg); border-color: var(--ok-bg); color: var(--ok); }
   li[data-k='extension'].done .dot { background: var(--purple-bg); border-color: var(--purple-bg); color: var(--purple-ink); } }
 
@@ -59,10 +59,15 @@
 .pill { display: inline-flex; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 500; white-space: nowrap;
   &[data-s='In Probation'] { background: var(--brand-tint); color: var(--brand-text); } &[data-s='Review Due'] { background: var(--warn-bg); color: var(--warn); }
   &[data-s='Overdue'] { background: var(--bad-bg); color: var(--bad); } &[data-s='Extended'] { background: var(--purple-bg); color: var(--purple-ink); }
-  &[data-s='Confirmed'] { background: var(--ok-bg); color: var(--ok); } &[data-s='Terminated'] { background: var(--khaki-bg); color: var(--khaki-ink); } &[data-s='Closed'] { background: var(--bg); color: var(--text-2); } }
+  &[data-s='Awaiting Approval'] { background: var(--warn-bg); color: var(--warn); } &[data-s='Confirmed'] { background: var(--ok-bg); color: var(--ok); } &[data-s='Terminated'] { background: var(--khaki-bg); color: var(--khaki-ink); } &[data-s='Closed'] { background: var(--bg); color: var(--text-2); } }
 .empty { padding: 48px; text-align: center; color: var(--text-2); }
 
 @media (max-width: 1199px) { .grid { grid-template-columns: 1fr; } }
 
 .im { margin: 0 0 8px; div + div { margin-top: 10px; } dt { margin-bottom: 2px; color: var(--text-2); font-size: 12px; font-weight: 500; } dd { margin: 0; font-size: 13px; line-height: 1.5; white-space: pre-line; } }
 .muted.bad { color: var(--bad); }
+.yn { display: inline-flex; gap: 8px; margin-top: 4px;
+  button { min-width: 72px; height: 36px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); font-weight: 500;
+    &.on { border-color: var(--brand); background: var(--brand-tint); color: var(--brand-text); } } }
+.btn-link-plain { padding: 0; border: 0; background: none; }
+.opt { color: var(--muted); font-weight: 400; }
