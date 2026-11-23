@@ -65,7 +65,7 @@ textarea.form-control { height: auto; }
 // Appendix F objectives block
 .obj { margin: 0 0 16px; padding: 12px 14px; border-radius: 8px; background: var(--bg);
   div + div { margin-top: 10px; } dt { margin-bottom: 4px; color: var(--text-2); font-size: 12px; font-weight: 500; } dd { margin: 0; font-size: 14px; line-height: 1.5; white-space: pre-line; } }
-.yn { display: inline-flex; gap: 8px; margin-top: 4px; padding: 2px; border-radius: 8px;
-  button { min-width: 72px; height: 36px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); font-weight: 500;
+.yn { display: inline-flex; gap: 8px; border-radius: 8px;
+  button { min-width: 72px; height: 40px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); font-weight: 500;
     &.on { border-color: var(--brand); background: var(--brand-tint); color: var(--brand-text); } &:disabled { cursor: default; } }
   &.err button { border-color: var(--danger); } }

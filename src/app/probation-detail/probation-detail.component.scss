@@ -59,15 +59,30 @@
 .pill { display: inline-flex; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 500; white-space: nowrap;
   &[data-s='In Probation'] { background: var(--brand-tint); color: var(--brand-text); } &[data-s='Review Due'] { background: var(--warn-bg); color: var(--warn); }
   &[data-s='Overdue'] { background: var(--bad-bg); color: var(--bad); } &[data-s='Extended'] { background: var(--purple-bg); color: var(--purple-ink); }
-  &[data-s='Awaiting Approval'] { background: var(--warn-bg); color: var(--warn); } &[data-s='Confirmed'] { background: var(--ok-bg); color: var(--ok); } &[data-s='Terminated'] { background: var(--khaki-bg); color: var(--khaki-ink); } &[data-s='Closed'] { background: var(--bg); color: var(--text-2); } }
+  &[data-s='Awaiting Approval'] { background: var(--warn-bg); color: var(--warn); } &[data-s='Objectives Pending'] { background: var(--bg); color: var(--brand-text); } &[data-s='Confirmed'] { background: var(--ok-bg); color: var(--ok); } &[data-s='Terminated'] { background: var(--khaki-bg); color: var(--khaki-ink); } &[data-s='Closed'] { background: var(--bg); color: var(--text-2); } }
 .empty { padding: 48px; text-align: center; color: var(--text-2); }
 
 @media (max-width: 1199px) { .grid { grid-template-columns: 1fr; } }
 
 .im { margin: 0 0 8px; div + div { margin-top: 10px; } dt { margin-bottom: 2px; color: var(--text-2); font-size: 12px; font-weight: 500; } dd { margin: 0; font-size: 13px; line-height: 1.5; white-space: pre-line; } }
 .muted.bad { color: var(--bad); }
-.yn { display: inline-flex; gap: 8px; margin-top: 4px;
-  button { min-width: 72px; height: 36px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); font-weight: 500;
+.yn { display: inline-flex; gap: 8px;
+  button { min-width: 72px; height: 40px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); font-weight: 500;
     &.on { border-color: var(--brand); background: var(--brand-tint); color: var(--brand-text); } } }
 .btn-link-plain { padding: 0; border: 0; background: none; }
 .opt { color: var(--muted); font-weight: 400; }
+
+// step 1 banner: the RM starts the probation after the initial meeting
+.step1 { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; padding: 16px 20px; border: 1.5px solid var(--accent); border-radius: 12px; background: var(--brand-tint); flex-wrap: wrap;
+  .num { display: grid; place-items: center; flex: none; width: 36px; height: 36px; border-radius: 50%; background: var(--accent); color: var(--on-accent); font-weight: 700; }
+  .tx { flex: 1; min-width: 240px; display: flex; flex-direction: column; gap: 4px; b { color: var(--heading); font-size: 15px; } span { color: var(--text-2); font-size: 13px; } em { display: block; margin-top: 2px; color: var(--brand-text); font-style: normal; font-weight: 600; } }
+  .wait { color: var(--text-2); font-size: 13px; font-weight: 500; i { margin-right: 6px; } }
+  &.late { border-color: var(--danger); .tx em { color: var(--bad); } } }
+
+.record { margin-bottom: 24px; padding: 8px 16px; th:not(:first-child), td:not(:first-child) { width: 180px; } }
+.rec { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px; margin: 0 0 20px; padding: 16px; border-radius: 10px; background: var(--bg);
+  dt { margin-bottom: 4px; color: var(--text-2); font-size: 12px; font-weight: 500; } dd { margin: 0; color: var(--heading); font-size: 14px; font-weight: 600; } }
+.rec-note { margin: 0 0 24px; padding-bottom: 20px; border-bottom: 1px solid var(--divider); color: var(--text-2); font-size: 13px; b { color: var(--heading); } b:first-child { margin-right: 6px; } }
+.rec-row { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 20px; align-items: start; textarea { height: auto; } }
+.rec-foot { display: flex; gap: 8px; margin: 0; color: var(--text-2); font-size: 13px; i { margin-top: 3px; color: var(--ok); } }
+@media (max-width: 767px) { .rec { grid-template-columns: 1fr 1fr; } .rec-row { grid-template-columns: 1fr; } }

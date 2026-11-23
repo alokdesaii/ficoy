@@ -209,3 +209,6 @@ body { font-family: Inter, system-ui, sans-serif; font-size: 14px; color: var(--
   }
   .table-responsive:has(> .table-stack) { overflow: visible; }
 }
+
+// a <span> used as a label (radio groups) must sit on its own line like a <label>
+.form-label { display: block; }

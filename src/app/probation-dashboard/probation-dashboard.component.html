@@ -23,7 +23,7 @@
     <ul class="actions">
       @for (a of actions(); track a.kind + a.code) {
         <li [attr.data-k]="a.kind">
-          <span class="ic"><i class="fa-solid" [class.fa-triangle-exclamation]="a.kind === 'overdue'"></i></span>
+          <span class="ic"><i class="fa-solid" [class.fa-triangle-exclamation]="a.kind === 'overdue'" [class.fa-play]="a.kind === 'start'"></i></span>
           <div class="tx"><b>{{ a.name }}</b><span>{{ a.detail }}</span></div>
           <a class="btn btn-sm-row" [class.btn-primary]="a.kind !== 'overdue'" [class.btn-cancel]="a.kind === 'overdue'" [routerLink]="a.link">{{ a.cta }}</a>
         </li>

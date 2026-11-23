@@ -59,6 +59,8 @@ export class ProbationDetailComponent {
   chain = computed(() => this.e() ? chainFor(this.e()!.name) : []);
   approvedBy = (r: Approver) => this.p()?.pending?.approved.find(a => a.role === r);
   approveLabel = computed(() => { const p = this.p(); if (!p?.pending) return ''; const n = nextApprover(p); return n === p.pending.chain.at(-1) ? `Approve as ${n} & Issue Letter` : `Approve as ${n} & Send to Admin`; });
+  // 3-month review completion: the first review's decision date once extended, else the submitted review
+  firstDone = computed(() => { const p = this.p(); return p?.extendedTo ? p.decisions?.find(d => d.outcome === 'Extend')?.decidedOn : p?.rmReviewOn; });
   approveNow() { approve(this.e()!.name, actor(), this.today); }
   // role-based action items (final list §3); everything else is view-only
   role = viewRole;

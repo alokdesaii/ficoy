@@ -117,7 +117,7 @@ export interface InitialMeeting { held: 'Yes' | 'No'; objectives: string; develo
 // final list: one extension, never past 6 months from joining
 export const MAX_TOTAL_MONTHS = 6;
 export const INITIAL_MEETING_DAYS = 7;   // People SOP 8.3: within 1 week of starting
-export type Stage = 'In Probation' | 'Review Due' | 'Overdue' | 'Extended' | 'Awaiting Approval' | 'Confirmed' | 'Terminated' | 'Closed' | 'Not Applicable';
+export type Stage = 'In Probation' | 'Review Due' | 'Overdue' | 'Extended' | 'Awaiting Approval' | 'Confirmed' | 'Terminated' | 'Closed' | 'Not Applicable' | 'Objectives Pending';
 
 // ponytail: mock records keyed by employee; replace with GET /probations
 export const probations = signal<Probation[]>([
@@ -138,10 +138,12 @@ export function timeline(p: Probation, joined: string, s: ProbationSettings, tod
   const baseEnd = probationEnd(joined, months || 0);
   const end = p.extendedTo ?? baseEnd;
   const reviewOpens = addDays(end, -s.reviewOpensDaysBefore);
-  const stage: Stage = p.applicable === false ? 'Not Applicable' : p.outcome ?? (p.pending ? 'Awaiting Approval' : today < reviewOpens ? (p.extendedTo ? 'Extended' : 'In Probation') : today <= end ? 'Review Due' : 'Overdue');
+  // probation runs from the joining date regardless; Start is the RM's audit record that objectives are set
+  const started = p.initial?.held === 'Yes';
+  const stage: Stage = p.applicable === false ? 'Not Applicable' : p.outcome ?? (p.pending ? 'Awaiting Approval' : today < reviewOpens ? (p.extendedTo ? 'Extended' : started ? 'In Probation' : 'Objectives Pending') : today <= end ? 'Review Due' : 'Overdue');
   const total = Math.max(1, daysBetween(joined, end) + 1);
   const elapsed = Math.min(total, Math.max(0, daysBetween(joined, today) + 1));
-  return { start: joined, months, baseEnd, end, reviewOpens, stage, daysLeft: daysBetween(today, end), progress: elapsed / total, exempt: !months, applicable: p.applicable !== false };
+  return { start: joined, months, baseEnd, end, reviewOpens, stage, daysLeft: daysBetween(today, end), progress: elapsed / total, exempt: !months, applicable: p.applicable !== false, started, meetingDue: addDays(joined, INITIAL_MEETING_DAYS - 1) };
 }
 
 // ── milestones, notifications, audit ─────────────────────────────────────
@@ -154,8 +156,8 @@ export function milestones(p: Probation, t: ReturnType<typeof timeline>, s: Prob
     { date: t.start, label: `Probation form sent to RM · complete within ${INITIAL_MEETING_DAYS} days`, kind: 'meeting', event: 'formSent', done: true }];
   const closed = !!p.outcome;
   const due = addDays(t.start, INITIAL_MEETING_DAYS - 1);
-  m.push(p.initial?.held === 'No' ? { date: p.initial.on, label: 'Initial discussion not held yet', kind: 'meeting', done: false, note: `noted by ${p.initial.by}` } : p.initial ? { date: p.initial.on, label: 'Initial meeting · objectives set', kind: 'meeting', event: 'initiated', done: true, note: `by ${p.initial.by}` }
-    : { date: due, label: 'Initial meeting due · objectives and development plan', kind: 'meeting', done: closed });
+  m.push(p.initial?.held === 'No' ? { date: p.initial.on, label: 'Initial discussion not held yet', kind: 'meeting', done: false, note: `noted by ${p.initial.by}` } : p.initial ? { date: p.initial.on, label: 'Objectives set · RM started the probation record', kind: 'meeting', event: 'initiated', done: true, note: `by ${p.initial.by}` }
+    : { date: due, label: 'Step 1 · initial meeting and objectives due', kind: 'meeting', done: closed });
   // one RM review cycle per end date; an extension runs a second cycle against the new end
   const cycle = (end: string, current: boolean) => {
     for (const n of s.reminderDays) { const d = addDays(end, -n); if (d >= t.start) m.push({ date: d, label: `Reminder · ${n} days before end`, kind: 'reminder', event: 'reminder', done: d <= today || closed || !current }); }
@@ -344,7 +346,7 @@ export function setDuration(employee: string, by: string, months: number, why: s
 }
 export function setInitialMeeting(employee: string, m: InitialMeeting) {
   probations.update(l => l.map(p => p.employee === employee ? { ...p, initial: m } : p));
-  log(employee, m.by, 'Initial meeting recorded · objectives and development plan set');
+  log(employee, m.by, m.held === 'Yes' ? 'Start clicked · initial meeting held, objectives and development plan set for the probation period' : 'Initial meeting not held yet');
 }
 export function acknowledge(employee: string, on: string) {
   probations.update(l => l.map(p => p.employee === employee ? { ...p, ackOn: on } : p));

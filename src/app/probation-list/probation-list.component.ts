@@ -11,7 +11,7 @@ import { departments } from '../departments';
 import { leaves } from '../leaves';
 import { exportCsv } from '../csv';
 
-const STAGES: Stage[] = ['In Probation', 'Review Due', 'Overdue', 'Extended', 'Awaiting Approval', 'Confirmed', 'Terminated', 'Closed'];
+const STAGES: Stage[] = ['Objectives Pending', 'In Probation', 'Review Due', 'Overdue', 'Extended', 'Awaiting Approval', 'Confirmed', 'Terminated', 'Closed'];
 
 @Component({
   selector: 'app-probation-list',

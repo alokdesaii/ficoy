@@ -58,6 +58,7 @@ export class MyProbationComponent {
     if (p.outcome === 'Closed') return { tone: 'bad', title: 'Your probation has closed', text: `Closed with your exit on ${fmt(p.exitOn)}.` };
     if (p.outcome === 'Terminated') return { tone: 'bad', title: 'Your probation has closed', text: 'Please read your letter from HR for next steps.' };
     if (p.extendedTo && !p.rmReviewOn) return { tone: 'pip', title: 'Your probation was extended', text: `It now ends on ${fmt(p.extendedTo)}. ${this.e().manager || 'Your manager'} will review you again before then.` };
+    if (t.stage === 'Objectives Pending') return { tone: 'info', title: 'Welcome! Your first meeting is coming up', text: `Your probation started on ${fmt(t.start)}. ${this.e().manager || 'Your manager'} will meet you by ${fmt(t.meetingDue)} to agree your objectives.` };
     if (t.stage === 'In Probation') return { tone: 'info', title: 'You\'re on track', text: `${this.e().manager || 'Your manager'} reviews your probation from ${fmt(t.reviewOpens)}. Nothing for you to do.` };
     // HR Q39: approval statuses are Admin-only; the employee just sees the review is complete
     if (!p.rmReviewOn) return { tone: 'warn', title: 'Your probation review is under way', text: `${this.e().manager || 'Your manager'} is completing your review, ${t.daysLeft < 0 ? 'which was due' : 'due by'} ${fmt(t.end)}.` };

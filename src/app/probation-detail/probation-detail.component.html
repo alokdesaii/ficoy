@@ -38,6 +38,19 @@
   </div>
   @if (resent() === 'remind') { <p class="toast"><i class="fa-solid fa-circle-check"></i>Reminder sent to {{ reviewer() || 'HR' }}</p> }
 
+  @if (!t.started && !closed() && t.applicable && !p()!.pending) {
+    <section class="step1" [class.late]="today > t.meetingDue">
+      <span class="num">1</span>
+      <div class="tx">
+        <b>Step 1: initial meeting &amp; objectives</b>
+        <span>{{ reviewer() || 'The RM' }} meets {{ e()!.name.split(' ')[0] }} within {{ 7 }} days of joining to set objectives for the probation period, fills the objectives form, then clicks Start. Probation already runs from the joining date ({{ t.start | date: 'd MMM y' }}); Start records in the audit trail that objectives are set.
+          <em>{{ today > t.meetingDue ? 'Overdue since' : 'Due by' }} {{ t.meetingDue | date: 'd MMM y' }}</em></span>
+      </div>
+      @if (canReview()) { <button class="btn btn-accent" (click)="ask('initial')"><i class="fa-solid fa-play"></i>Set Objectives &amp; Start</button> }
+      @else { <span class="wait"><i class="fa-regular fa-hourglass-half"></i>Waiting for {{ reviewer() || 'the RM' }}</span> }
+    </section>
+  }
+
   <div class="dates">
     <div><span>Start</span><b>{{ t.start | date: 'dd MMM y' }}</b></div>
     <div [class.hl]="p()!.months"><span>Duration</span><b>{{ t.months }} months@if (p()!.months) { <small> (exception)</small> }</b></div>
@@ -50,6 +63,23 @@
       <div class="prog"><span>{{ left(t.daysLeft) }}</span>
         <div class="bar" [attr.data-s]="t.stage"><i [style.width.%]="t.progress * 100"></i></div></div>
     }
+  </div>
+
+  <!-- Appendix F: Date Due / Completed -->
+  <div class="panel record">
+    <table class="table m-0">
+      <thead><tr><th>Appendix F</th><th>Date due</th><th>Completed</th></tr></thead>
+      <tbody>
+        <tr><td>Initial meeting</td><td class="num">{{ t.meetingDue | date: 'dd MMM y' }}</td>
+          <td class="num" [class.bad]="!t.started && today > t.meetingDue">{{ t.started ? (p()!.initial!.on | date: 'dd MMM y') : (today > t.meetingDue ? 'Overdue' : 'Pending') }}</td></tr>
+        <tr><td>3-month review</td><td class="num">{{ t.baseEnd | date: 'dd MMM y' }}</td>
+          <td class="num">{{ firstDone() ? (firstDone() | date: 'dd MMM y') : 'Pending' }}</td></tr>
+        @if (p()!.extendedTo) {
+          <tr><td>Final review (extended)</td><td class="num">{{ p()!.extendedTo | date: 'dd MMM y' }}</td>
+            <td class="num">{{ p()!.rmReviewOn ? (p()!.rmReviewOn | date: 'dd MMM y') : 'Pending' }}</td></tr>
+        }
+      </tbody>
+    </table>
   </div>
 
   <div class="grid">
@@ -109,20 +139,6 @@
 
     <aside class="side">
       <div class="panel">
-        <h3 class="sub-heading">Initial Meeting</h3>
-        @if (p()!.initial?.held === 'Yes' ? p()!.initial : null; as im) {
-          <dl class="im">
-            <div><dt>Objectives</dt><dd>{{ im.objectives }}</dd></div>
-            <div><dt>Development plan</dt><dd>{{ im.development }}</dd></div>
-          </dl>
-          <p class="muted small m-0">Recorded by {{ im.by }} on {{ im.on | date: 'd MMM y' }}</p>
-        } @else {
-          <p class="muted" [class.bad]="!closed() && today > meetingDue()">{{ closed() ? 'Not recorded.' : (today > meetingDue() ? 'Overdue. ' : '') + 'Due by ' + (meetingDue() | date: 'd MMM y') + '. The line manager sets objectives and a development plan within 1 week of joining.' }}</p>
-          @if (!closed() && canReview()) { <button class="btn btn-cancel btn-sm-row" (click)="ask('initial')"><i class="fa-solid fa-handshake"></i>Record Initial Meeting</button> }
-        }
-      </div>
-
-      <div class="panel">
         <h3 class="sub-heading">Reviews</h3>
         <ul class="reviews">
           <li [class.done]="p()!.rmReviewOn">
@@ -166,13 +182,13 @@
 
   @if (action(); as a) {
     <div class="backdrop" (click)="action.set(null)">
-      <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="actTitle" (click)="$event.stopPropagation()">
-        <div class="dialog-head"><h4 id="actTitle">{{ a === 'initial' ? 'Probation Initiation Form' : a === 'hod' ? 'Hand review to HOD' : a === 'admin' ? 'Admin takeover' : a === 'applicable' ? (t.applicable ? 'Mark probation not applicable' : 'Make probation applicable') : a === 'hr' ? 'Outcome Confirmation Form' : a === 'exit' ? 'Close probation on exit' : a === 'back' ? 'Send back to RM' : a === 'duration' ? 'Change probation duration' : 'Reopen for correction' }}</h4>
+      <div class="dialog" [class.dialog-lg]="a === 'initial'" role="dialog" aria-modal="true" aria-labelledby="actTitle" (click)="$event.stopPropagation()">
+        <div class="dialog-head"><h4 id="actTitle">{{ a === 'initial' ? 'Probation objectives form' : a === 'hod' ? 'Hand review to HOD' : a === 'admin' ? 'Admin takeover' : a === 'applicable' ? (t.applicable ? 'Mark probation not applicable' : 'Make probation applicable') : a === 'hr' ? 'Outcome Confirmation Form' : a === 'exit' ? 'Close probation on exit' : a === 'back' ? 'Send back to RM' : a === 'duration' ? 'Change probation duration' : 'Reopen for correction' }}</h4>
           <button class="btn-close-popup" (click)="action.set(null)" aria-label="Close"><i class="fa-solid fa-xmark"></i></button></div>
         <div class="dialog-body">
+          @if (a !== 'initial') {
           <p class="muted">@switch (a) {
             @case ('hod') { {{ hod() }} (head of {{ e()!.department }}) will own the review instead of {{ e()!.manager }}. }
-            @case ('initial') { Appendix F Part 1. Agreed between {{ reviewer() || 'the line manager' }} and {{ e()!.name }}; reviewed at the probation review. }
             @case ('exit') { The probation closes with the exit date and reason. No review or decision follows. }
             @case ('admin') { Exception: {{ e()!.manager || 'the RM' }} is unavailable, so you ({{ role() }}) take over the review and decision. Your name and reason are logged. }
             @case ('applicable') { {{ t.applicable ? 'Rare exception: no reviews, reminders or notifications run for ' + e()!.name + '.' : 'Probation restarts tracking from the joining date.' }} }
@@ -181,6 +197,7 @@
             @case ('back') { The {{ p()!.pending?.d?.outcome }} outcome is not approved. The review goes back to {{ reviewer() || 'the RM' }} to revise and resubmit. }
             @default { HR clears the {{ p()!.outcome?.toLowerCase() }} outcome and the review goes back to {{ reviewer() || 'the RM' }}. The employee, RM and HR are notified; the audit trail keeps both. }
           }</p>
+          }
           @if (a === 'hr') {
             <div class="field mb-3"><label class="form-label" for="hrb">HR received by<span class="req">*</span></label>
               <input id="hrb" class="form-control" [(ngModel)]="recvBy" [class.is-invalid]="actTried && !recvBy.trim()" /></div>
@@ -190,17 +207,31 @@
               <input id="hri" class="form-control" type="date" [(ngModel)]="issuedOn" /></div>
           }
           @if (a === 'initial') {
-            <div class="field mb-3"><span class="form-label">Was the initial discussion done?<span class="req">*</span></span>
-              <div class="yn" role="radiogroup" aria-label="Initial discussion done">
-                @for (v of ['Yes', 'No']; track v) { <button type="button" role="radio" [class.on]="held === v" [attr.aria-checked]="held === v" (click)="held = $any(v)">{{ v }}</button> }
-              </div></div>
-            <div class="field mb-3"><label class="form-label" for="imd">{{ held === 'Yes' ? 'Meeting date' : 'Date noted' }}<span class="req">*</span></label>
-              <input id="imd" class="form-control" type="date" [min]="t.start" [max]="today" [(ngModel)]="actDate" [class.is-invalid]="actTried && !actDate" /></div>
+            <!-- Appendix F Part 1 -->
+            <dl class="rec">
+              <div><dt>Employee</dt><dd>{{ e()!.name }}</dd></div>
+              <div><dt>Job title</dt><dd>{{ e()!.designation }}</dd></div>
+              <div><dt>Department</dt><dd>{{ e()!.department }}</dd></div>
+              <div><dt>Start date</dt><dd>{{ t.start | date: 'd MMM y' }}</dd></div>
+              <div><dt>Line manager</dt><dd>{{ reviewer() || '—' }}</dd></div>
+            </dl>
+            <p class="rec-note"><b>Part 1 · Initial Meeting</b> Line Manager completes within 1 week of joining (People SOP 8.3). Due by <b>{{ t.meetingDue | date: 'd MMM y' }}</b>.</p>
+            <div class="rec-row">
+              <div class="field"><span class="form-label">Initial meeting held?<span class="req">*</span></span>
+                <div class="yn" role="radiogroup" aria-label="Initial meeting held">
+                  @for (v of ['Yes', 'No']; track v) { <button type="button" role="radio" [class.on]="held === v" [attr.aria-checked]="held === v" (click)="held = $any(v)">{{ v }}</button> }
+                </div></div>
+              <div class="field"><label class="form-label" for="imd">{{ held === 'Yes' ? 'Meeting date' : 'Date noted' }}<span class="req">*</span></label>
+                <input id="imd" class="form-control" type="date" [min]="t.start" [max]="today" [(ngModel)]="actDate" [class.is-invalid]="actTried && !actDate" /></div>
+            </div>
             @if (held === 'Yes') {
-            <div class="field mb-3"><label class="form-label" for="imo">Section A: Objectives<span class="req">*</span></label>
-              <textarea id="imo" class="form-control" rows="4" placeholder="One objective per line" [(ngModel)]="objectives" [class.is-invalid]="actTried && !objectives.trim()"></textarea></div>
-            <div class="field"><label class="form-label" for="imp">Section B: Development plan<span class="req">*</span></label>
-              <textarea id="imp" class="form-control" rows="3" placeholder="Training, support, buddy" [(ngModel)]="development" [class.is-invalid]="actTried && !development.trim()"></textarea></div>
+              <div class="rec-row">
+                <div class="field"><label class="form-label" for="imo">Section A · Objectives<span class="req">*</span></label>
+                  <textarea id="imo" class="form-control" rows="5" placeholder="One objective per line" [(ngModel)]="objectives" [class.is-invalid]="actTried && !objectives.trim()"></textarea></div>
+                <div class="field"><label class="form-label" for="imp">Section B · Development plan<span class="req">*</span></label>
+                  <textarea id="imp" class="form-control" rows="5" placeholder="Training, support, buddy" [(ngModel)]="development" [class.is-invalid]="actTried && !development.trim()"></textarea></div>
+              </div>
+              <p class="rec-foot"><i class="fa-regular fa-circle-check"></i>Start logs that objectives are set and notifies {{ e()!.name.split(' ')[0] }}, the HOD and HR. Objectives are reviewed at the 3-month review.</p>
             }
           }
           @if (a === 'exit') {
@@ -222,7 +253,7 @@
           }
         </div>
         <div class="dialog-foot"><button class="btn btn-cancel" (click)="action.set(null)">Cancel</button>
-          <button class="btn btn-primary" (click)="act()">{{ a === 'initial' ? 'Save Initiation Form' : a === 'hod' ? 'Hand to HOD' : a === 'exit' ? 'Close Probation' : a === 'back' ? 'Send Back to RM' : a === 'duration' ? 'Save Duration' : a === 'admin' ? 'Take Over Review' : a === 'applicable' ? 'Save' : a === 'hr' ? 'Save HR Record' : 'Reopen' }}</button></div>
+          <button class="btn btn-primary" (click)="act()">{{ a === 'initial' ? (held === 'Yes' ? 'Start' : 'Save') : a === 'hod' ? 'Hand to HOD' : a === 'exit' ? 'Close Probation' : a === 'back' ? 'Send Back to RM' : a === 'duration' ? 'Save Duration' : a === 'admin' ? 'Take Over Review' : a === 'applicable' ? 'Save' : a === 'hr' ? 'Save HR Record' : 'Reopen' }}</button></div>
       </div>
     </div>
   }

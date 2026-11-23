@@ -5,7 +5,7 @@ import { actor, addDays, inScope, milestones, probations, probationSettings, tim
 import { employees } from '../employees';
 import { leaves } from '../leaves';
 
-interface Action { kind: 'overdue'; name: string; code: string; detail: string; link: string; cta: string; }
+interface Action { kind: 'overdue' | 'start'; name: string; code: string; detail: string; link: string; cta: string; }
 
 @Component({
   selector: 'app-probation-dashboard',
@@ -44,6 +44,7 @@ export class ProbationDashboardComponent {
   actions = computed<Action[]>(() => {
     const a: Action[] = [];
     for (const r of this.open()) {
+      if (r.t.stage === 'Objectives Pending') a.push({ kind: 'start', name: r.e.name, code: r.e.code, detail: `Step 1 · initial meeting and objectives ${this.today > r.t.meetingDue ? 'overdue since' : 'due by'} ${r.t.meetingDue}`, link: `/probation/view/${r.e.code}`, cta: 'Set Objectives' });
       const ext = r.p.extendedTo ? ' (extended)' : '';
       if (r.t.stage === 'Overdue' && !r.p.rmReviewOn) a.push({ kind: 'overdue', name: r.e.name, code: r.e.code, detail: `${-r.t.daysLeft} days overdue · waiting on RM review${ext}`, link: `/probation/view/${r.e.code}`, cta: 'Chase' });
     }
